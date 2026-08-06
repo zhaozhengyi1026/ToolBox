@@ -6,9 +6,9 @@ Requirements:
 
 Examples:
     python md_to_html.py
-    # Then paste: D:\杉数科技\深职大项目案例\美妆
+    # Then paste: D:\美妆
 
-    python md_to_html.py "D:\杉数科技\深职大项目案例\美妆"
+    python md_to_html.py "D:\美妆"
     python md_to_html.py "D:\资料\美妆" --toc
 
 Local image paths such as ``images/photo.png`` are resolved relative to each
