@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN" xml:lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10.1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>mdtohtml.py 使用说明</title>
+  <style>
+
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+white-space: pre-wrap;
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+  <style>
+:root {
+color-scheme: light;
+--text: #222;
+--muted: #666;
+--border: #b8b8b8;
+--shade: #f5f6f8;
+--accent: #315a86;
+}
+* { box-sizing: border-box; }
+html {
+background: #eceff3;
+-webkit-text-size-adjust: 100%;
+}
+body {
+max-width: 920px;
+margin: 28px auto;
+padding: 44px 54px;
+background: #fff;
+color: var(--text);
+font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC",
+"Source Han Sans SC", Arial, sans-serif;
+font-size: 15px;
+line-height: 1.75;
+overflow-wrap: anywhere;
+}
+h1, h2, h3, h4 {
+line-height: 1.35;
+color: #182536;
+break-after: avoid-page;
+page-break-after: avoid;
+}
+h1 {
+margin: 0 0 1.2em;
+padding-bottom: .55em;
+border-bottom: 2px solid var(--accent);
+font-size: 2em;
+text-align: center;
+}
+h2 {
+margin-top: 2em;
+padding-bottom: .35em;
+border-bottom: 1px solid #d7dde4;
+font-size: 1.55em;
+}
+h3 { margin-top: 1.55em; font-size: 1.24em; }
+h4 { margin-top: 1.35em; font-size: 1.08em; }
+p { margin: .7em 0; }
+ul, ol { padding-left: 1.8em; }
+li + li { margin-top: .25em; }
+a { color: #245b8f; text-decoration: none; }
+strong { color: #142338; }
+hr { margin: 2em 0; border: 0; border-top: 1px solid #ccd2d9; }
+img {
+display: block;
+max-width: 100%;
+max-height: 220mm;
+width: auto;
+height: auto;
+margin: 1.1em auto;
+object-fit: contain;
+break-inside: avoid-page;
+page-break-inside: avoid;
+}
+figure { margin: 1.2em 0; text-align: center; }
+figcaption { margin-top: .4em; color: var(--muted); font-size: .9em; }
+table {
+width: 100%;
+margin: 1.2em 0;
+border-collapse: collapse;
+table-layout: auto;
+font-size: .92em;
+}
+thead { display: table-header-group; }
+tr {
+break-inside: avoid-page;
+page-break-inside: avoid;
+}
+th, td {
+padding: .52em .62em;
+border: 1px solid var(--border);
+text-align: left;
+vertical-align: top;
+}
+th { background: #edf1f5; font-weight: 700; }
+tbody tr:nth-child(even) { background: #fafbfc; }
+blockquote {
+margin: 1em 0;
+padding: .6em 1em;
+border-left: 4px solid #8296aa;
+background: var(--shade);
+color: #303842;
+}
+blockquote > :first-child { margin-top: 0; }
+blockquote > :last-child { margin-bottom: 0; }
+code {
+padding: .12em .32em;
+border-radius: 3px;
+background: #f0f2f4;
+font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+font-size: .9em;
+}
+pre {
+padding: 1em;
+border: 1px solid #d7dce2;
+border-radius: 5px;
+background: #f6f8fa;
+white-space: pre-wrap;
+word-break: break-word;
+break-inside: avoid-page;
+page-break-inside: avoid;
+}
+pre code { padding: 0; background: transparent; }
+#TOC {
+margin: 1.2em 0 2em;
+padding: 1em 1.4em;
+border: 1px solid #d7dde4;
+background: #fafbfc;
+}
+#TOC::before { content: "目录"; font-weight: 700; font-size: 1.15em; }
+#TOC ul { margin: .55em 0 0; }
+.page-break {
+break-before: page;
+page-break-before: always;
+}
+@page {
+size: A4;
+margin: 17mm 15mm 18mm;
+}
+@media print {
+html { background: #fff; }
+body {
+max-width: none;
+margin: 0;
+padding: 0;
+font-size: 10.5pt;
+print-color-adjust: exact;
+-webkit-print-color-adjust: exact;
+}
+a { color: inherit; }
+a[href^="http"]::after { content: none; }
+p { orphans: 3; widows: 3; }
+}
+</style>
+</head>
+<body>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#md_to_html.py-使用说明" id="toc-md_to_html.py-使用说明">md_to_html.py 使用说明</a>
+<ul>
+<li><a href="#一直接复制使用的命令" id="toc-一直接复制使用的命令">一、直接复制使用的命令</a></li>
+<li><a href="#二使用前需要准备什么" id="toc-二使用前需要准备什么">二、使用前需要准备什么</a></li>
+<li><a href="#三最常用的命令" id="toc-三最常用的命令">三、最常用的命令</a>
+<ul>
+<li><a href="#把一个-markdown-转成-html" id="toc-把一个-markdown-转成-html">1. 把一个 Markdown 转成 HTML</a></li>
+<li><a href="#同时生成-html-和-pdf" id="toc-同时生成-html-和-pdf">2.
+同时生成 HTML 和 PDF</a></li>
+<li><a href="#生成带目录的-html-和-pdf" id="toc-生成带目录的-html-和-pdf">3. 生成带目录的 HTML 和 PDF</a></li>
+<li><a href="#转换整个文件夹里的md文档" id="toc-转换整个文件夹里的md文档">4. 转换整个文件夹里的md文档</a></li>
+<li><a href="#不在命令中填写路径" id="toc-不在命令中填写路径">5.
+不在命令中填写路径</a></li>
+</ul></li>
+<li><a href="#四推荐的命令" id="toc-四推荐的命令">四、推荐的命令</a></li>
+<li><a href="#五参数通俗解释" id="toc-五参数通俗解释">五、参数通俗解释</a>
+<ul>
+<li><a href="#pdf生成-pdf" id="toc-pdf生成-pdf"><code>--pdf</code>：生成
+PDF</a></li>
+<li><a href="#toc生成目录" id="toc-toc生成目录"><code>--toc</code>：生成目录</a></li>
+<li><a href="#strict严格检查-markdown" id="toc-strict严格检查-markdown"><code>--strict</code>：严格检查
+Markdown</a></li>
+<li><a href="#skip-existing跳过已有文件" id="toc-skip-existing跳过已有文件"><code>--skip-existing</code>：跳过已有文件</a></li>
+<li><a href="#o-或---output指定输出位置" id="toc-o-或---output指定输出位置"><code>-o</code> 或
+<code>--output</code>：指定输出位置</a></li>
+<li><a href="#number-sections自动给标题编号" id="toc-number-sections自动给标题编号"><code>--number-sections</code>：自动给标题编号</a></li>
+<li><a href="#browser手动指定浏览器" id="toc-browser手动指定浏览器"><code>--browser</code>：手动指定浏览器</a></li>
+<li><a href="#lang设置-html-语言" id="toc-lang设置-html-语言"><code>--lang</code>：设置 HTML 语言</a></li>
+</ul></li>
+<li><a href="#六图片应该怎么写" id="toc-六图片应该怎么写">六、图片应该怎么写</a></li>
+<li><a href="#七怎么看懂运行结果" id="toc-七怎么看懂运行结果">七、怎么看懂运行结果</a></li>
+<li><a href="#八常见问题" id="toc-八常见问题">八、常见问题</a>
+<ul>
+<li><a href="#提示未找到-pandoc" id="toc-提示未找到-pandoc">提示“未找到
+Pandoc”</a></li>
+<li><a href="#提示未找到-chrome-或-edge" id="toc-提示未找到-chrome-或-edge">提示“未找到 Chrome 或 Edge”</a></li>
+<li><a href="#html-正常但目录出现了一整段正文" id="toc-html-正常但目录出现了一整段正文">HTML
+正常，但目录出现了一整段正文</a></li>
+<li><a href="#中文是否会乱码" id="toc-中文是否会乱码">中文是否会乱码</a></li>
+<li><a href="#pdf-没有更新" id="toc-pdf-没有更新">PDF 没有更新</a></li>
+<li><a href="#路径中有中文或空格怎么办" id="toc-路径中有中文或空格怎么办">路径中有中文或空格怎么办</a></li>
+</ul></li>
+<li><a href="#九参数速查表" id="toc-九参数速查表">九、参数速查表</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="md_to_html.py-使用说明">md_to_html.py 使用说明</h1>
+<p><code>md_to_html.py</code> 用来把 Markdown 文档转换成适合阅读和打印的
+HTML，也可以继续调用 Chrome 或 Edge，自动生成 PDF。</p>
+<p>简单理解，它完成的是下面这条流程：</p>
+<pre class="text"><code>Markdown 文件 → HTML 网页 → PDF 文件</code></pre>
+<p>HTML 会保留下来，方便先在浏览器中检查排版。PDF
+使用浏览器的打印引擎生成，可以正常处理中文字体、表格和本地图片，不需要逐个点击“打印”和“另存为
+PDF”。</p>
+<h2 id="一直接复制使用的命令">一、直接复制使用的命令</h2>
+<p>只生成 HTML：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span></span></code></pre></div>
+<p>生成 HTML 和 PDF，不要目录：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">--</span>pdf</span></code></pre></div>
+<p>生成 HTML、目录和 PDF：</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;.&quot;</span> <span class="op">--</span>toc <span class="op">--</span>pdf</span></code></pre></div>
+<p>正式交付前严格检查并生成完整结果：</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;.&quot;</span> <span class="op">--</span>toc <span class="op">--</span>pdf <span class="op">--</span>strict</span></code></pre></div>
+<p>只补充尚未生成的文件：</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;.&quot;</span> <span class="op">--</span>toc <span class="op">--</span>pdf <span class="op">--</span>strict <span class="op">--</span>skip-existing</span></code></pre></div>
+<p>完整的 Markdown 写法要求请查看同目录下的《Markdown 编写规范》。</p>
+<h2 id="二使用前需要准备什么">二、使用前需要准备什么</h2>
+<p>运行脚本需要：</p>
+<ol type="1">
+<li>Python 3；</li>
+<li>Pandoc；</li>
+<li>如果需要生成 PDF，还需要 Chrome 或 Edge。</li>
+</ol>
+<p>本机已经安装这些程序时，一般不需要额外配置。脚本会自动寻找
+Pandoc、Chrome 和 Edge。</p>
+<p>打开 PowerShell，然后进入脚本所在目录：</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cd</span> <span class="st">&quot;md2pdf&quot;</span></span></code></pre></div>
+<p>检查脚本是否可以运行：</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="op">--</span>help</span></code></pre></div>
+<p>如果能看到参数说明，表示 Python 和脚本运行正常。</p>
+<h2 id="三最常用的命令">三、最常用的命令</h2>
+<h3 id="把一个-markdown-转成-html">1. 把一个 Markdown 转成 HTML</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span></span></code></pre></div>
+<p>运行后，会在 Markdown 同目录下生成：</p>
+<pre class="text"><code>Markdown编写规范.html</code></pre>
+<h3 id="同时生成-html-和-pdf">2. 同时生成 HTML 和 PDF</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">--</span>pdf</span></code></pre></div>
+<p>运行后，会生成：</p>
+<pre class="text"><code>Markdown编写规范.html
+Markdown编写规范.pdf</code></pre>
+<h3 id="生成带目录的-html-和-pdf">3. 生成带目录的 HTML 和 PDF</h3>
+<div class="sourceCode" id="cb13"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">--</span>toc <span class="op">--</span>pdf</span></code></pre></div>
+<p>只有写了 <code>--toc</code>
+才会生成目录。不需要目录时，直接省略这个参数。</p>
+<h3 id="转换整个文件夹里的md文档">4. 转换整个文件夹里的md文档</h3>
+<p>脚本位于 <code>md2pdf</code> 中时，用 <code>.</code>
+表示当前文件夹：</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;.&quot;</span> <span class="op">--</span>toc <span class="op">--</span>pdf</span></code></pre></div>
+<p>脚本会查找该文件夹及其所有子文件夹中的 <code>.md</code> 和
+<code>.markdown</code> 文件，然后逐个转换。</p>
+<h3 id="不在命令中填写路径">5. 不在命令中填写路径</h3>
+<p>也可以直接运行：</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span></span></code></pre></div>
+<p>看到提示后，把文件夹路径粘贴进去，再按 Enter：</p>
+<pre class="text"><code>请输入包含 Markdown 文档的文件夹地址。
+文件夹地址：.</code></pre>
+<p>路径外面有英文双引号也没关系，脚本会自动去掉。</p>
+<h2 id="四推荐的命令">四、推荐的命令</h2>
+<p>正式批量转换建议启用格式检查、目录和 PDF：</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;.&quot;</span> <span class="op">--</span>toc <span class="op">--</span>pdf <span class="op">--</span>strict</span></code></pre></div>
+<p>参数含义：</p>
+<ul>
+<li><code>--toc</code>：生成目录；</li>
+<li><code>--pdf</code>：生成 PDF；</li>
+<li><code>--strict</code>：发现高风险 Markdown
+格式问题时，停止转换有问题的文件。</li>
+</ul>
+<p>推荐操作顺序：</p>
+<ol type="1">
+<li>按照《Markdown 编写规范》完成文档；</li>
+<li>使用上面的严格模式命令转换；</li>
+<li>打开 HTML，检查目录、标题、表格和图片；</li>
+<li>打开 PDF，检查分页、字体和图片清晰度；</li>
+<li>确认无误后再交付。</li>
+</ol>
+<h2 id="五参数通俗解释">五、参数通俗解释</h2>
+<h3 id="pdf生成-pdf"><code>--pdf</code>：生成 PDF</h3>
+<p>不写 <code>--pdf</code> 时，脚本只生成 HTML：</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span></span></code></pre></div>
+<p>写上 <code>--pdf</code> 后，同时生成 HTML 和 PDF：</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">--</span>pdf</span></code></pre></div>
+<p>PDF 与 HTML 放在同一输出目录，文件名相同，扩展名不同。</p>
+<h3 id="toc生成目录"><code>--toc</code>：生成目录</h3>
+<p>需要目录时：</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">--</span>toc</span></code></pre></div>
+<p>不需要目录时，不写
+<code>--toc</code>。目录默认收集一至三级标题，因此正文标题应规范使用
+<code>#</code>、<code>##</code> 和 <code>###</code>。</p>
+<h3 id="strict严格检查-markdown"><code>--strict</code>：严格检查
+Markdown</h3>
+<p>脚本每次都会检查常见格式问题。普通模式只显示警告，然后继续转换。</p>
+<p>加入 <code>--strict</code> 后，如果某个 Markdown
+存在以下问题，该文件会停止转换：</p>
+<ul>
+<li>标题的 <code>#</code> 后缺少空格；</li>
+<li>分隔线或 Setext 标记前后缺少空行；</li>
+<li>代码块没有结束标记；</li>
+<li>本地图片不存在。</li>
+</ul>
+<p>用法：</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;.&quot;</span> <span class="op">--</span>strict</span></code></pre></div>
+<p>严格模式只能检查明确的格式问题。目录层级是否合理、表格内容是否正确、PDF
+分页是否美观，仍然需要打开 HTML 和 PDF 查看。</p>
+<h3 id="skip-existing跳过已有文件"><code>--skip-existing</code>：跳过已有文件</h3>
+<p>如果文件已经生成，不想重复转换，可以使用：</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;.&quot;</span> <span class="op">--</span>pdf <span class="op">--</span>skip-existing</span></code></pre></div>
+<p>HTML 和 PDF 会分别判断：</p>
+<ul>
+<li>HTML 已存在、PDF 不存在：跳过 HTML，只补 PDF；</li>
+<li>PDF 已存在、HTML 不存在：生成 HTML，跳过 PDF；</li>
+<li>两者都存在：两者都跳过。</li>
+</ul>
+<p>不写 <code>--skip-existing</code> 时，脚本会重新生成输出文件。新的
+PDF 生成并验证成功后，才会替换原来的
+PDF，避免浏览器失败时破坏已有文件。</p>
+<h3 id="o-或---output指定输出位置"><code>-o</code> 或
+<code>--output</code>：指定输出位置</h3>
+<p>默认情况下，HTML 和 PDF 会放在 Markdown 旁边。</p>
+<p>把单个文件输出到指定目录：</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">--</span>output <span class="st">&quot;.\output&quot;</span> <span class="op">--</span>pdf</span></code></pre></div>
+<p>转换整个文件夹并统一输出到另一个目录：</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;.&quot;</span> <span class="op">--</span>output <span class="st">&quot;.\output&quot;</span> <span class="op">--</span>toc <span class="op">--</span>pdf</span></code></pre></div>
+<p>批量转换时，脚本会在输出目录中保留原来的子目录结构，避免不同文件夹里的同名文件互相覆盖。</p>
+<p><code>-o</code> 是 <code>--output</code>
+的简写，下面两条命令效果相同：</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">-</span>o <span class="st">&quot;.\output&quot;</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">--</span>output <span class="st">&quot;.\output&quot;</span></span></code></pre></div>
+<h3 id="number-sections自动给标题编号"><code>--number-sections</code>：自动给标题编号</h3>
+<div class="sourceCode" id="cb26"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">--</span>toc <span class="op">--</span>number-sections</span></code></pre></div>
+<p>Pandoc 会自动给章节标题编号。如果 Markdown
+标题中已经人工写了“一、”“1.”等编号，不建议再使用该参数，否则可能出现重复编号。</p>
+<h3 id="browser手动指定浏览器"><code>--browser</code>：手动指定浏览器</h3>
+<p>一般不需要使用。只有脚本找不到 Chrome 或 Edge
+时，才手动填写浏览器路径：</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">--</span>pdf <span class="op">--</span>browser <span class="st">&quot;C:\Program Files\Google\Chrome\Application\chrome.exe&quot;</span></span></code></pre></div>
+<p>也可以指定 Edge：</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">--</span>pdf <span class="op">--</span>browser <span class="st">&quot;C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe&quot;</span></span></code></pre></div>
+<h3 id="lang设置-html-语言"><code>--lang</code>：设置 HTML 语言</h3>
+<p>默认是简体中文 <code>zh-CN</code>，通常不需要修改：</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;Markdown编写规范.md&quot;</span> <span class="op">--</span>lang zh-CN</span></code></pre></div>
+<h2 id="六图片应该怎么写">六、图片应该怎么写</h2>
+<p>推荐把图片放在 Markdown 旁边的 <code>images</code> 文件夹中：</p>
+<pre class="text"><code>md2pdf
+├─ md_to_html.py
+├─ Markdown编写规范.md
+├─ md_to_html使用说明.md
+└─ images
+   └─ 使用流程.png</code></pre>
+<p>Markdown 中使用相对路径：</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="al">![md2pdf 使用流程](images/使用流程.png)</span></span></code></pre></div>
+<p>脚本会以当前 Markdown 所在目录为起点查找图片，并把本地图片嵌入生成的
+HTML。因此生成的 HTML 可以单独复制，不需要再携带 <code>images</code>
+文件夹。</p>
+<p>如果提示“本地图片不存在”，请检查：</p>
+<ul>
+<li>图片是否真的放在对应目录；</li>
+<li>文件名和扩展名是否正确；</li>
+<li>Markdown 路径是否相对于当前 <code>.md</code> 文件；</li>
+<li>路径中是否有多余空格。</li>
+</ul>
+<h2 id="七怎么看懂运行结果">七、怎么看懂运行结果</h2>
+<p>正常完成时会看到类似输出：</p>
+<pre class="text"><code>找到 1 个 Markdown 文档，开始转换……
+
+完成：Markdown编写规范.html
+PDF 完成：Markdown编写规范.pdf
+
+处理结束：HTML 成功 1 个，跳过 0 个；PDF 成功 1 个，跳过 0 个；格式警告 0 条；失败 0 个。</code></pre>
+<p>几个数字的含义：</p>
+<ul>
+<li><code>成功</code>：本次新生成或重新生成的文件数；</li>
+<li><code>跳过</code>：因为使用了 <code>--skip-existing</code>
+而没有重复生成的文件数；</li>
+<li><code>格式警告</code>：Markdown 预检查发现的问题数量；</li>
+<li><code>失败</code>：没有完成转换的 Markdown 文件数。</li>
+</ul>
+<p>脚本结束码为 0 表示全部完成；结束码为 1
+表示至少有一个文件失败。批量转换时，一个文件失败不会阻止脚本继续处理后面的文件。</p>
+<h2 id="八常见问题">八、常见问题</h2>
+<h3 id="提示未找到-pandoc">提示“未找到 Pandoc”</h3>
+<p>表示 Pandoc 没有安装，或者脚本找不到 <code>pandoc.exe</code>。</p>
+<p>先在 PowerShell 中检查：</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>pandoc <span class="op">--</span>version</span></code></pre></div>
+<p>如果仍然找不到，可以安装 Pandoc，或者设置 <code>PANDOC_PATH</code>
+环境变量指向 <code>pandoc.exe</code>。</p>
+<h3 id="提示未找到-chrome-或-edge">提示“未找到 Chrome 或 Edge”</h3>
+<p>只有使用 <code>--pdf</code> 时才需要浏览器。可以确认 Chrome 或 Edge
+已安装，或者使用 <code>--browser</code> 手动指定浏览器位置。</p>
+<h3 id="html-正常但目录出现了一整段正文">HTML
+正常，但目录出现了一整段正文</h3>
+<p>通常是 <code>---</code> 紧贴上一段文字，Pandoc
+把那段文字识别成了标题。</p>
+<p>错误写法：</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; 这是一段提示。</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>---</span></code></pre></div>
+<p>正确写法：</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; 这是一段提示。</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>---</span></code></pre></div>
+<p>运行时加入 <code>--strict</code>，可以在转换前发现这类问题。</p>
+<h3 id="中文是否会乱码">中文是否会乱码</h3>
+<p>HTML 使用 UTF-8，并优先使用微软雅黑等中文字体。PDF 由 Chrome 或 Edge
+的打印引擎生成，正常情况下不会出现中文乱码。</p>
+<p>如果 Markdown 本身不是 UTF-8，脚本还会尝试按 GB18030
+读取。但为了避免不同电脑表现不一致，仍建议把源文件统一保存为 UTF-8。</p>
+<h3 id="pdf-没有更新">PDF 没有更新</h3>
+<p>检查命令中是否使用了
+<code>--skip-existing</code>。如果用了，该参数会跳过已有
+PDF。去掉参数后重新运行即可覆盖更新。</p>
+<h3 id="路径中有中文或空格怎么办">路径中有中文或空格怎么办</h3>
+<p>把整个路径放进英文双引号中：</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>python md_to_html<span class="op">.</span><span class="fu">py</span> <span class="st">&quot;.\Markdown编写规范.md&quot;</span> <span class="op">--</span>pdf</span></code></pre></div>
+<p>不要删除路径中原本存在的空格，也不要使用中文引号。</p>
+<h2 id="九参数速查表">九、参数速查表</h2>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>是否必需</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>input</code></td>
+<td>否</td>
+<td>Markdown 文件或文件夹路径；省略后会提示输入</td>
+</tr>
+<tr>
+<td><code>-o</code>、<code>--output</code></td>
+<td>否</td>
+<td>指定 HTML 和 PDF 输出位置</td>
+</tr>
+<tr>
+<td><code>--toc</code></td>
+<td>否</td>
+<td>生成一至三级标题目录</td>
+</tr>
+<tr>
+<td><code>--pdf</code></td>
+<td>否</td>
+<td>在生成 HTML 后继续生成 PDF</td>
+</tr>
+<tr>
+<td><code>--strict</code></td>
+<td>否</td>
+<td>有格式警告时停止转换对应文件</td>
+</tr>
+<tr>
+<td><code>--skip-existing</code></td>
+<td>否</td>
+<td>分别跳过已有 HTML 和 PDF</td>
+</tr>
+<tr>
+<td><code>--number-sections</code></td>
+<td>否</td>
+<td>自动给章节标题编号</td>
+</tr>
+<tr>
+<td><code>--browser</code></td>
+<td>否</td>
+<td>手动指定 Chrome 或 Edge 路径</td>
+</tr>
+<tr>
+<td><code>--lang</code></td>
+<td>否</td>
+<td>设置 HTML 语言，默认 <code>zh-CN</code></td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
