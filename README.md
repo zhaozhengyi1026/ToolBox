@@ -8,6 +8,8 @@
 
 将 Markdown 文档转换为便于阅读、打印的独立 HTML，也可以继续调用 Chrome 或 Edge 生成 PDF。
 
+> 这个工具更适合 Markdown 中引用了本地图片的情况。如果文档只有纯文字，可以直接使用在线工具 [md2pdf](https://realdennis.github.io/md2pdf/)。
+
 - 支持单个文件和文件夹批量转换
 - 支持目录、章节编号和格式检查
 - 支持嵌入本地图片
