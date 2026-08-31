@@ -2,6 +2,7 @@ const elements = {
   dropZone: document.querySelector("#drop-zone"),
   folderInput: document.querySelector("#folder-input"),
   fileInput: document.querySelector("#file-input"),
+  multiMdInput: document.querySelector("#multi-md-input"),
   uploadPanel: document.querySelector("#upload-panel"),
   workspace: document.querySelector("#workspace"),
   documentSelect: document.querySelector("#document-select"),
@@ -265,7 +266,11 @@ async function renderDocument() {
     if (missing.length) {
       const warning = `<div class="missing-image"><strong>未找到 ${missing.length} 张本地图片：</strong><br>${missing.map(escapeHtml).join("<br>")}</div>`;
       html = warning + html;
-      updateStatus(`已转换，但有 ${missing.length} 张图片未找到`, true);
+      const onlyMarkdownFiles = state.files.every((file) => /\.(?:md|markdown)$/i.test(file.name));
+      const missingImageHint = onlyMarkdownFiles
+        ? "当前只选择了 Markdown；如文档引用本地图片，请改用“选择整个文件夹”"
+        : "检查图片路径，或重新选择包含图片的文件夹";
+      updateStatus(`已转换，但有 ${missing.length} 张图片未找到`, true, missingImageHint);
     } else {
       updateStatus("转换完成，所有本地图片已嵌入", false);
     }
@@ -279,13 +284,13 @@ async function renderDocument() {
   }
 }
 
-function updateStatus(message, warning) {
+function updateStatus(message, warning, detail) {
   elements.resultStatus.classList.toggle("has-warning", warning);
   elements.resultStatus.querySelector(".status-icon").textContent = warning ? "!" : "✓";
   elements.resultStatus.querySelector("strong").textContent = message;
-  elements.resultStatus.querySelector("small").textContent = warning
-    ? "检查图片路径或重新选择包含图片的文件夹"
-    : "文件只在当前浏览器中处理";
+  elements.resultStatus.querySelector("small").textContent = detail || (warning
+    ? "检查图片路径，或重新选择包含图片的文件夹"
+    : "文件只在当前浏览器中处理");
 }
 
 function scheduleRender() {
@@ -328,6 +333,7 @@ function resetWorkspace() {
   state.renderedHtml = "";
   elements.folderInput.value = "";
   elements.fileInput.value = "";
+  elements.multiMdInput.value = "";
   elements.source.value = "";
   elements.preview.innerHTML = "";
   elements.workspace.hidden = true;
@@ -416,6 +422,7 @@ function printPdf() {
 
 elements.folderInput.addEventListener("change", () => loadFiles(elements.folderInput.files));
 elements.fileInput.addEventListener("change", () => loadFiles(elements.fileInput.files));
+elements.multiMdInput.addEventListener("change", () => loadFiles(elements.multiMdInput.files));
 elements.documentSelect.addEventListener("change", () => selectMarkdown(state.markdownFiles[Number(elements.documentSelect.value)]));
 elements.source.addEventListener("input", scheduleRender);
 elements.toc.addEventListener("change", renderDocument);

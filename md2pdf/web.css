@@ -357,7 +357,12 @@ h1 em {
 
 .drop-zone h3 { margin-bottom: 9px; font-size: 28px; letter-spacing: -.03em; }
 .drop-zone > p { margin-bottom: 25px; color: var(--muted); }
-.upload-actions { display: flex; gap: 12px; }
+.upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
 
 .button {
   display: inline-flex;

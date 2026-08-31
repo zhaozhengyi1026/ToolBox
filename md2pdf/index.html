@@ -61,14 +61,16 @@
               <span class="drop-folder"></span>
               <span class="drop-arrow">↓</span>
             </div>
-            <h3>把项目文件夹拖到这里</h3>
-            <p>推荐选择同时包含 Markdown 和本地图片的整个文件夹。</p>
+            <h3>把文件夹或 MD 拖到这里</h3>
+            <p>支持一个 MD、多个 MD，也支持包含多份文档和图片的整个文件夹。</p>
             <div class="upload-actions">
               <label class="button button-primary" for="folder-input">选择整个文件夹</label>
-              <label class="button button-secondary" for="file-input">选择若干文件</label>
+              <label class="button button-secondary" for="file-input">选择一个 MD</label>
+              <label class="button button-secondary" for="multi-md-input">选择多个 MD</label>
             </div>
             <input id="folder-input" type="file" webkitdirectory directory multiple hidden>
-            <input id="file-input" type="file" accept=".md,.markdown,image/*" multiple hidden>
+            <input id="file-input" type="file" accept=".md,.markdown,text/markdown" hidden>
+            <input id="multi-md-input" type="file" accept=".md,.markdown,text/markdown" multiple hidden>
           </div>
 
           <aside class="upload-help">
@@ -78,7 +80,7 @@
 └─ images/
    ├─ 封面.jpg
    └─ 流程图.png</pre>
-            <p>支持 JPG、PNG、GIF、WebP 和 SVG。图片路径应相对于 Markdown 文件。</p>
+            <p>文件夹可包含多个 Markdown 和多张图片。没有图片引用的 Markdown 也会正常转换。</p>
           </aside>
         </div>
 
