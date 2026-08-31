@@ -530,6 +530,16 @@ h1 em {
 .markdown-preview .document-toc strong { display: block; margin-bottom: .5em; }
 .markdown-preview .document-toc ol { margin: 0; padding-left: 1.4em; }
 .markdown-preview .missing-image { padding: 12px; border: 1px dashed #e38752; background: #fff4ed; color: #a34f20; font-family: var(--mono); font-size: 12px; }
+.markdown-preview .empty-document {
+  display: grid;
+  min-height: 280px;
+  place-content: center;
+  gap: 6px;
+  color: var(--muted);
+  text-align: center;
+}
+.markdown-preview .empty-document strong { color: var(--ink); font-size: 18px; }
+.markdown-preview .empty-document span { font-size: 14px; }
 
 .result-bar {
   display: flex;

@@ -26,6 +26,24 @@ const state = {
   renderTimer: null,
 };
 
+const LIMITS = Object.freeze({
+  maxFiles: 1000,
+  maxMarkdownFiles: 100,
+  maxMarkdownBytes: 10 * 1024 * 1024,
+  maxImageBytes: 25 * 1024 * 1024,
+  maxTotalBytes: 200 * 1024 * 1024,
+});
+
+const IMAGE_MIME_BY_EXTENSION = Object.freeze({
+  avif: "image/avif",
+  gif: "image/gif",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  png: "image/png",
+  svg: "image/svg+xml",
+  webp: "image/webp",
+});
+
 const DOCUMENT_CSS = `
 :root{color-scheme:light;--text:#252b36;--muted:#5e6878;--border:#b8b8b8;--shade:#f5f6f8;--accent:#315a86}
 *{box-sizing:border-box}html{background:#eceff3;-webkit-text-size-adjust:100%}
@@ -48,7 +66,8 @@ function showToast(message) {
   elements.toast.textContent = message;
   elements.toast.classList.add("is-visible");
   window.clearTimeout(showToast.timer);
-  showToast.timer = window.setTimeout(() => elements.toast.classList.remove("is-visible"), 2200);
+  const duration = message.length > 28 ? 4200 : 2800;
+  showToast.timer = window.setTimeout(() => elements.toast.classList.remove("is-visible"), duration);
 }
 
 function setStep(step) {
@@ -94,11 +113,54 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function extensionOf(file) {
+  return file.name.split(".").pop()?.toLowerCase() || "";
+}
+
+function isMarkdownFile(file) {
+  return /\.(?:md|markdown)$/i.test(file.name);
+}
+
+function imageMime(file) {
+  const extensionMime = IMAGE_MIME_BY_EXTENSION[extensionOf(file)];
+  if (extensionMime) return extensionMime;
+  const declaredMime = (file.type || "").toLowerCase();
+  return Object.values(IMAGE_MIME_BY_EXTENSION).includes(declaredMime) ? declaredMime : "";
+}
+
+function isImageFile(file) {
+  return Boolean(imageMime(file));
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))}KB`;
+  return `${(bytes / 1024 / 1024).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)}MB`;
+}
+
+async function looksLikeBinary(file) {
+  if (!file.size) return false;
+  const bytes = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
+  let suspicious = 0;
+  for (const byte of bytes) {
+    if (byte === 0) return true;
+    if (byte < 7 || (byte > 13 && byte < 32)) suspicious += 1;
+  }
+  return suspicious / bytes.length > 0.08;
+}
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
+    reader.onload = () => {
+      const result = String(reader.result);
+      const mime = imageMime(file);
+      const commaIndex = result.indexOf(",");
+      resolve(mime && commaIndex >= 0
+        ? `data:${mime};base64,${result.slice(commaIndex + 1)}`
+        : result);
+    };
+    reader.onerror = () => reject(reader.error || new Error("图片读取失败"));
+    reader.onabort = () => reject(new Error("图片读取已取消"));
     reader.readAsDataURL(file);
   });
 }
@@ -142,7 +204,7 @@ function resolveImageFile(rawPath, markdownFile, fileMap) {
 
   const suffix = normalizePath(cleanPath).toLowerCase();
   const matches = [...fileMap.entries()].filter(([path, file]) =>
-    file.type.startsWith("image/") && (path.endsWith(`/${suffix}`) || path === suffix)
+    isImageFile(file) && (path.endsWith(`/${suffix}`) || path === suffix)
   );
   return matches.length === 1 ? matches[0][1] : null;
 }
@@ -175,7 +237,7 @@ async function embedLocalImages(markdown, markdownFile) {
 
   await Promise.all([...targets].map(async (target) => {
     const file = resolveImageFile(target, markdownFile, fileMap);
-    if (!file || !file.type.startsWith("image/")) {
+    if (!file || !isImageFile(file)) {
       missing.add(target);
       return;
     }
@@ -257,6 +319,14 @@ async function renderDocument() {
   const source = elements.source.value;
   elements.sourceMeta.textContent = `${source.length.toLocaleString("zh-CN")} 字符`;
 
+  if (!source.trim()) {
+    state.renderedHtml = "";
+    elements.preview.innerHTML = '<div class="empty-document"><strong>这份 Markdown 还没有内容</strong><span>可以在左侧输入内容，预览会自动更新。</span></div>';
+    updateStatus("当前 Markdown 为空", true, "输入内容后即可下载 HTML 或打印 PDF");
+    setStep(2);
+    return;
+  }
+
   try {
     const { markdown, missing } = await embedLocalImages(source, state.currentFile);
     const rawHtml = window.marked.parse(markdown, { gfm: true, breaks: false });
@@ -280,7 +350,8 @@ async function renderDocument() {
     setStep(2);
   } catch (error) {
     console.error(error);
-    updateStatus(`转换失败：${error.message}`, true);
+    state.renderedHtml = "";
+    updateStatus("转换失败", true, "文件可能已损坏；请重新选择文件后再试");
   }
 }
 
@@ -299,22 +370,72 @@ function scheduleRender() {
 }
 
 async function selectMarkdown(file) {
-  state.currentFile = file;
-  elements.source.value = await readMarkdown(file);
-  await renderDocument();
+  if (!file) {
+    updateStatus("无法打开所选文档", true, "请重新选择 Markdown 文件");
+    return false;
+  }
+  try {
+    state.currentFile = file;
+    elements.source.value = await readMarkdown(file);
+    await renderDocument();
+    return true;
+  } catch (error) {
+    console.error(error);
+    state.renderedHtml = "";
+    elements.preview.innerHTML = "";
+    updateStatus("Markdown 读取失败", true, "文件可能已损坏或已被其他程序移除");
+    return false;
+  }
 }
 
 async function loadFiles(files) {
+  const receivedFiles = [...files];
+  if (!receivedFiles.length) return false;
+  if (receivedFiles.length > LIMITS.maxFiles) {
+    showToast(`文件过多：最多一次处理 ${LIMITS.maxFiles} 个文件`);
+    return false;
+  }
+
   const unique = new Map();
-  for (const file of files) unique.set(filePath(file).toLowerCase(), file);
-  state.files = [...unique.values()];
-  state.markdownFiles = state.files
-    .filter((file) => /\.(?:md|markdown)$/i.test(file.name))
+  for (const file of receivedFiles) unique.set(filePath(file).toLowerCase(), file);
+  const selectedFiles = [...unique.values()];
+  const markdownCandidates = selectedFiles.filter(isMarkdownFile);
+  const imageCandidates = selectedFiles.filter((file) => !isMarkdownFile(file) && isImageFile(file));
+  const unsupportedCount = selectedFiles.length - markdownCandidates.length - imageCandidates.length;
+
+  if (markdownCandidates.length > LIMITS.maxMarkdownFiles) {
+    showToast(`Markdown 过多：最多一次处理 ${LIMITS.maxMarkdownFiles} 份`);
+    return false;
+  }
+
+  const oversizedMarkdown = markdownCandidates.filter((file) => file.size > LIMITS.maxMarkdownBytes);
+  const oversizedImages = imageCandidates.filter((file) => file.size > LIMITS.maxImageBytes);
+  const sizeAcceptedMarkdown = markdownCandidates.filter((file) => file.size <= LIMITS.maxMarkdownBytes);
+  const acceptedImages = imageCandidates.filter((file) => file.size <= LIMITS.maxImageBytes);
+  const binaryChecks = await Promise.all(sizeAcceptedMarkdown.map(async (file) => ({
+    file,
+    binary: await looksLikeBinary(file),
+  })));
+  const acceptedMarkdown = binaryChecks.filter((item) => !item.binary).map((item) => item.file);
+  const binaryCount = binaryChecks.length - acceptedMarkdown.length;
+  const acceptedFiles = [...acceptedMarkdown, ...acceptedImages];
+  const totalBytes = acceptedFiles.reduce((total, file) => total + file.size, 0);
+
+  if (totalBytes > LIMITS.maxTotalBytes) {
+    showToast(`文件总计 ${formatSize(totalBytes)}，一次最多处理 ${formatSize(LIMITS.maxTotalBytes)}`);
+    return false;
+  }
+
+  state.files = acceptedFiles;
+  state.markdownFiles = acceptedMarkdown
     .sort((a, b) => filePath(a).localeCompare(filePath(b), "zh-CN"));
 
   if (!state.markdownFiles.length) {
-    showToast("没有找到 Markdown 文件");
-    return;
+    const reason = oversizedMarkdown.length || binaryCount
+      ? "Markdown 过大、损坏或不是文本文件"
+      : "仅支持 .md 和 .markdown 文件";
+    showToast(`没有可用的 Markdown：${reason}`);
+    return false;
   }
 
   elements.documentSelect.innerHTML = state.markdownFiles.map((file, index) =>
@@ -322,8 +443,25 @@ async function loadFiles(files) {
   ).join("");
   elements.uploadPanel.hidden = true;
   elements.workspace.hidden = false;
-  await selectMarkdown(state.markdownFiles[0]);
+  const opened = await selectMarkdown(state.markdownFiles[0]);
+  if (!opened) return false;
   elements.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
+  const notices = [];
+  if (unsupportedCount) notices.push(`忽略 ${unsupportedCount} 个无关文件`);
+  if (oversizedMarkdown.length) notices.push(`跳过 ${oversizedMarkdown.length} 份超过 10MB 的 Markdown`);
+  if (oversizedImages.length) notices.push(`跳过 ${oversizedImages.length} 张超过 25MB 的图片`);
+  if (binaryCount) notices.push(`跳过 ${binaryCount} 份非文本 Markdown`);
+  if (notices.length) showToast(notices.join("；"));
+  return true;
+}
+
+async function handleFileSelection(files, failureMessage = "文件读取失败，请重新选择") {
+  try { return await loadFiles(files); }
+  catch (error) {
+    console.error(error);
+    showToast(failureMessage);
+    return false;
+  }
 }
 
 function resetWorkspace() {
@@ -420,9 +558,9 @@ function printPdf() {
   setStep(3);
 }
 
-elements.folderInput.addEventListener("change", () => loadFiles(elements.folderInput.files));
-elements.fileInput.addEventListener("change", () => loadFiles(elements.fileInput.files));
-elements.multiMdInput.addEventListener("change", () => loadFiles(elements.multiMdInput.files));
+elements.folderInput.addEventListener("change", () => handleFileSelection(elements.folderInput.files, "文件夹读取失败，请重新选择"));
+elements.fileInput.addEventListener("change", () => handleFileSelection(elements.fileInput.files));
+elements.multiMdInput.addEventListener("change", () => handleFileSelection(elements.multiMdInput.files));
 elements.documentSelect.addEventListener("change", () => selectMarkdown(state.markdownFiles[Number(elements.documentSelect.value)]));
 elements.source.addEventListener("input", scheduleRender);
 elements.toc.addEventListener("change", renderDocument);
@@ -446,7 +584,7 @@ elements.printPdf.addEventListener("click", printPdf);
 });
 
 elements.dropZone.addEventListener("drop", async (event) => {
-  try { await loadFiles(await filesFromDrop(event.dataTransfer)); }
+  try { await handleFileSelection(await filesFromDrop(event.dataTransfer)); }
   catch (error) {
     console.error(error);
     showToast("读取文件夹失败，请使用选择文件夹按钮");
