@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="在浏览器本地把带图片的 Markdown 转换为独立 HTML 或 PDF，不上传文件。">
+    <meta name="theme-color" content="#315cde">
+    <title>md2pdf 在线转换 · ToolBox</title>
+    <link rel="icon" href="../assets/toolbox-mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="web.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/lib/marked.umd.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" defer></script>
+    <script src="web.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#converter">跳到转换器</a>
+
+    <header class="site-header">
+      <a class="brand" href="../index.html" aria-label="返回 ToolBox 首页">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>ToolBox</span>
+      </a>
+      <nav aria-label="页面导航">
+        <a href="#how-it-works">使用方法</a>
+        <a href="md_to_html使用说明.html">桌面版说明</a>
+        <a class="back-link" href="../index.html">返回首页 <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div>
+          <p class="eyebrow"><span></span>md2pdf · 浏览器版</p>
+          <h1>图片跟着文档走，<br><em>转换不丢图。</em></h1>
+        </div>
+        <div class="intro-note">
+          <span class="privacy-mark" aria-hidden="true">⌂</span>
+          <div>
+            <strong>文件不会上传</strong>
+            <p>Markdown 和图片只在当前浏览器中处理，刷新页面后即清空。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="converter" id="converter" aria-labelledby="converter-title">
+        <div class="converter-bar">
+          <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          <h2 id="converter-title">Markdown 转换工作台</h2>
+          <span class="runtime-state"><i></i> LOCAL</span>
+        </div>
+
+        <div class="step-strip" aria-label="转换步骤">
+          <span class="step is-active" data-step="1"><b>1</b>选择文件</span>
+          <span class="step" data-step="2"><b>2</b>检查内容</span>
+          <span class="step" data-step="3"><b>3</b>导出文档</span>
+        </div>
+
+        <div class="upload-panel" id="upload-panel">
+          <div class="drop-zone" id="drop-zone">
+            <div class="drop-icon" aria-hidden="true">
+              <span class="drop-folder"></span>
+              <span class="drop-arrow">↓</span>
+            </div>
+            <h3>把项目文件夹拖到这里</h3>
+            <p>推荐选择同时包含 Markdown 和本地图片的整个文件夹。</p>
+            <div class="upload-actions">
+              <label class="button button-primary" for="folder-input">选择整个文件夹</label>
+              <label class="button button-secondary" for="file-input">选择若干文件</label>
+            </div>
+            <input id="folder-input" type="file" webkitdirectory directory multiple hidden>
+            <input id="file-input" type="file" accept=".md,.markdown,image/*" multiple hidden>
+          </div>
+
+          <aside class="upload-help">
+            <p class="panel-label">推荐目录结构</p>
+            <pre aria-label="推荐目录结构"><span>我的文档/</span>
+├─ <b>文章.md</b>
+└─ images/
+   ├─ 封面.jpg
+   └─ 流程图.png</pre>
+            <p>支持 JPG、PNG、GIF、WebP 和 SVG。图片路径应相对于 Markdown 文件。</p>
+          </aside>
+        </div>
+
+        <div class="workspace" id="workspace" hidden>
+          <div class="workspace-toolbar">
+            <div class="document-picker">
+              <label for="document-select">当前文档</label>
+              <select id="document-select"></select>
+            </div>
+            <div class="option-list" aria-label="转换选项">
+              <label><input id="toc-option" type="checkbox"> 生成目录</label>
+              <label><input id="number-option" type="checkbox"> 章节编号</label>
+            </div>
+            <button class="plain-button" id="change-files" type="button">重新选文件</button>
+          </div>
+
+          <div class="editor-grid">
+            <section class="editor-pane" aria-labelledby="source-title">
+              <div class="pane-title">
+                <h3 id="source-title">Markdown</h3>
+                <span id="source-meta">0 字</span>
+              </div>
+              <textarea id="markdown-source" spellcheck="false" aria-label="Markdown 源文档"></textarea>
+            </section>
+
+            <section class="preview-pane" aria-labelledby="preview-title">
+              <div class="pane-title">
+                <h3 id="preview-title">打印预览</h3>
+                <span>A4</span>
+              </div>
+              <div class="preview-scroll">
+                <article class="markdown-preview" id="markdown-preview"></article>
+              </div>
+            </section>
+          </div>
+
+          <div class="result-bar">
+            <div class="result-status" id="result-status" role="status" aria-live="polite">
+              <span class="status-icon">✓</span>
+              <div><strong>准备就绪</strong><small>本地图片会自动嵌入导出文件</small></div>
+            </div>
+            <div class="export-actions">
+              <button class="button button-secondary" id="download-html" type="button">下载 HTML</button>
+              <button class="button button-primary" id="print-pdf" type="button">打印为 PDF</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="how-it-works" id="how-it-works">
+        <div class="section-heading">
+          <p class="panel-label">使用方法</p>
+          <h2>三个动作，文档就能带图离开。</h2>
+        </div>
+        <ol>
+          <li><b>选择文件夹</b><span>把 Markdown 和引用的图片一起交给浏览器。</span></li>
+          <li><b>检查预览</b><span>修改内容，并确认图片、表格和代码排版。</span></li>
+          <li><b>导出文件</b><span>下载独立 HTML，或调用浏览器打印为 PDF。</span></li>
+        </ol>
+      </section>
+
+      <section class="desktop-note">
+        <div>
+          <p class="panel-label">需要批量处理？</p>
+          <h2>桌面版仍然保留。</h2>
+          <p>需要一次转换整个目录、严格检查格式或自动生成多个 PDF 时，Python 桌面版更合适。</p>
+        </div>
+        <div class="desktop-actions">
+          <a class="button button-dark" href="md_to_html.py" download>下载 Python 脚本</a>
+          <a class="text-link" href="md_to_html使用说明.html">查看完整说明 <span aria-hidden="true">→</span></a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>ToolBox</span></a>
+      <p>所有转换均在本地浏览器中完成。</p>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

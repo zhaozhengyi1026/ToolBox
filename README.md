@@ -2,6 +2,12 @@
 
 这里收集一些我个人觉得实用的小工具，并会持续更新。
 
+## 项目网站
+
+仓库根目录包含一个响应式静态网站，可直接部署到 Vercel。网站用于介绍和下载当前收录的工具。
+
+在 Vercel 中导入本仓库时，保持项目根目录为仓库根目录、Framework Preset 选择 `Other`，不需要填写 Build Command 或 Output Directory，即可完成部署。
+
 ## 工具列表
 
 ### md2pdf
@@ -9,6 +15,11 @@
 将 Markdown 文档转换为便于阅读、打印的独立 HTML，也可以继续调用 Chrome 或 Edge 生成 PDF。
 
 > 这个工具更适合 Markdown 中引用了本地图片的情况。如果文档只有纯文字，可以直接使用在线工具 [md2pdf](https://realdennis.github.io/md2pdf/)。
+
+仓库同时提供两个版本：
+
+- 浏览器版：选择包含 Markdown 和图片的文件夹，在本地完成预览、独立 HTML 下载和 PDF 打印，文件不会上传；
+- Python 桌面版：适合批量转换、严格格式检查和自动生成多个 PDF。
 
 - 支持单个文件和文件夹批量转换
 - 支持目录、章节编号和格式检查

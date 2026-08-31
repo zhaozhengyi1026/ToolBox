@@ -57,8 +57,7 @@ body {
   padding: 44px 54px;
   background: #fff;
   color: var(--text);
-  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC",
-               "Source Han Sans SC", Arial, sans-serif;
+  font-family: "Microsoft YaHei", sans-serif;
   font-size: 15px;
   line-height: 1.75;
   overflow-wrap: anywhere;
@@ -148,7 +147,7 @@ code {
   padding: .12em .32em;
   border-radius: 3px;
   background: #f0f2f4;
-  font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+  font-family: "Microsoft YaHei", sans-serif;
   font-size: .9em;
 }
 

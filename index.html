@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ToolBox：持续更新个人觉得有用的小工具，目前包含 md2pdf 和 MyACG。">
+    <meta name="theme-color" content="#315cde">
+    <title>ToolBox · 好用的小工具，放在手边</title>
+    <link rel="icon" href="assets/toolbox-mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到主要内容</a>
+
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="ToolBox 首页">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </span>
+        <span>ToolBox</span>
+      </a>
+
+      <nav class="site-nav" aria-label="主要导航">
+        <a href="#tools">工具</a>
+        <a href="#guide">怎么选</a>
+        <a class="nav-github" href="https://github.com/sjksndnfkwks/ToolBox" target="_blank" rel="noreferrer">
+          GitHub
+          <span aria-hidden="true">↗</span>
+        </a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="hero-copy reveal">
+          <p class="eyebrow"><span class="status-dot"></span>个人工具箱 · 持续更新中</p>
+          <h1>把好用的工具，<br><span>放在手边。</span></h1>
+          <p class="hero-intro">不堆功能，不绕弯路。这里收集我自己用过、觉得顺手的小工具，打开就能解决具体问题。</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#tools">看看有什么</a>
+            <a class="text-link" href="https://github.com/sjksndnfkwks/ToolBox" target="_blank" rel="noreferrer">查看源文件 <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+
+        <div class="workbench reveal" aria-label="Markdown 文件转换为带有本地图片的 PDF 的示意图">
+          <div class="window-bar">
+            <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+            <span>文件转换工作台</span>
+            <span class="window-state">READY</span>
+          </div>
+          <div class="workbench-body">
+            <div class="file-stack" aria-hidden="true">
+              <div class="file file-back"></div>
+              <div class="file file-main">
+                <span class="file-fold"></span>
+                <b>旅行记录.md</b>
+                <span class="file-line long"></span>
+                <span class="file-line"></span>
+                <span class="image-ref">![照片](./images/海边.jpg)</span>
+                <span class="file-line short"></span>
+              </div>
+            </div>
+            <div class="conversion-path" aria-hidden="true">
+              <span class="path-line"></span>
+              <span class="path-label">md2pdf</span>
+              <span class="path-arrow">→</span>
+            </div>
+            <div class="pdf-preview" aria-hidden="true">
+              <span class="pdf-badge">PDF</span>
+              <div class="preview-title"></div>
+              <div class="preview-image">
+                <span class="sun"></span>
+                <span class="hill hill-back"></span>
+                <span class="hill hill-front"></span>
+              </div>
+              <div class="preview-lines"><i></i><i></i><i></i></div>
+            </div>
+          </div>
+          <div class="workbench-footer">
+            <span><i class="check-icon">✓</i> 本地图片已嵌入</span>
+            <span>输出：HTML + PDF</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="tools-section" id="tools">
+        <div class="section-heading reveal">
+          <div>
+            <p class="section-label">当前收录</p>
+            <h2>两件趁手的小工具</h2>
+          </div>
+          <p>每个工具只解决一类问题。需要哪个，就拿走哪个。</p>
+        </div>
+
+        <div class="tool-grid">
+          <article class="tool-card md-card reveal">
+            <div class="card-topline">
+              <span class="tool-index">MD / PDF</span>
+              <span class="platform-tag">Windows · Python</span>
+            </div>
+            <div class="tool-icon md-icon" aria-hidden="true">
+              <span>MD</span>
+              <i>↓</i>
+              <span>PDF</span>
+            </div>
+            <h3>md2pdf</h3>
+            <p class="tool-summary">把引用了本地图片的 Markdown，完整转换成适合阅读和打印的 HTML / PDF。</p>
+            <ul class="feature-list">
+              <li>自动嵌入本地图片，不怕换电脑丢图</li>
+              <li>支持目录、章节编号和格式检查</li>
+              <li>可批量转换整个文件夹</li>
+            </ul>
+
+            <div class="command-box">
+              <code>python md_to_html.py "." --toc --pdf</code>
+              <button class="copy-button" type="button" data-copy='python md_to_html.py "." --toc --pdf' aria-label="复制运行命令">复制</button>
+            </div>
+
+            <div class="card-actions">
+              <a class="button button-dark" href="md2pdf/">在线转换</a>
+              <a class="text-link" href="md2pdf/md_to_html使用说明.html">使用说明 <span aria-hidden="true">→</span></a>
+            </div>
+          </article>
+
+          <article class="tool-card acg-card reveal">
+            <div class="card-topline">
+              <span class="tool-index">NOVEL / COMIC</span>
+              <span class="platform-tag">Android</span>
+            </div>
+            <div class="acg-visual" aria-hidden="true">
+              <div class="phone">
+                <div class="phone-speaker"></div>
+                <div class="phone-screen">
+                  <div class="search-pill"><span></span><i></i></div>
+                  <div class="shelf shelf-one"><i></i><i></i><i></i></div>
+                  <div class="shelf shelf-two"><i></i><i></i><i></i></div>
+                </div>
+              </div>
+              <span class="bubble bubble-a">漫</span>
+              <span class="bubble bubble-b">文</span>
+              <span class="spark spark-a">✦</span>
+              <span class="spark spark-b">＋</span>
+            </div>
+            <h3>MyACG</h3>
+            <p class="tool-summary">在手机上免费阅读小说和漫画，支持自动搜索内容，安装后就能开始找书。</p>
+            <ul class="feature-list">
+              <li>小说与漫画集中阅读</li>
+              <li>自动搜索可用内容</li>
+              <li>Android 安装包直接下载</li>
+            </ul>
+
+            <div class="apk-meta">
+              <span>APK</span>
+              <span>约 11.8 MB</span>
+              <span>Android</span>
+            </div>
+
+            <div class="card-actions">
+              <a class="button button-acg" href="阅读小软件/MyACG.apk" download>下载 MyACG</a>
+              <a class="text-link" href="阅读小软件/README.md">安装说明 <span aria-hidden="true">→</span></a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="choice-section reveal" id="guide">
+        <div class="choice-copy">
+          <p class="section-label">怎么选</p>
+          <h2>Markdown 里有本地图片？<br>用这里的 md2pdf。</h2>
+          <p>它会把图片一起嵌进 HTML，再通过浏览器生成 PDF，文件挪到别处也能正常显示。</p>
+        </div>
+        <div class="choice-divider" aria-hidden="true"><span>或者</span></div>
+        <div class="choice-alt">
+          <span class="plain-file" aria-hidden="true"><i></i><i></i><i></i></span>
+          <div>
+            <h3>只有纯文字？</h3>
+            <p>不需要下载脚本，直接使用在线版即可。</p>
+            <a class="text-link external-link" href="https://realdennis.github.io/md2pdf/" target="_blank" rel="noreferrer">打开在线 md2pdf <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="update-strip reveal" aria-labelledby="update-title">
+        <div class="update-symbol" aria-hidden="true">＋</div>
+        <div>
+          <p class="section-label">接下来</p>
+          <h2 id="update-title">工具箱会继续装满。</h2>
+        </div>
+        <p>遇到真正好用、值得留下来的小工具，我会继续放进这里。</p>
+        <a class="button button-outline" href="https://github.com/sjksndnfkwks/ToolBox" target="_blank" rel="noreferrer">关注更新</a>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <a class="brand footer-brand" href="#top">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>ToolBox</span>
+      </a>
+      <p>为日常问题准备的个人工具箱。</p>
+      <p class="footer-note">使用第三方内容或服务时，请遵守当地法律法规及版权要求。</p>
+    </footer>
+
+    <div class="toast" role="status" aria-live="polite">命令已复制</div>
+  </body>
+</html>
