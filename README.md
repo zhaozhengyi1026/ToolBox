@@ -2,12 +2,6 @@
 
 这里收集一些我个人觉得实用的小工具，并会持续更新。
 
-## 项目网站
-
-仓库根目录包含一个响应式静态网站，可直接部署到 Vercel。网站用于介绍和使用当前收录的工具。
-
-在 Vercel 中导入本仓库时，保持项目根目录为仓库根目录、Framework Preset 选择 `Other`，不需要填写 Build Command 或 Output Directory，即可完成部署。
-
 ## 工具列表
 
 ### md2pdf
