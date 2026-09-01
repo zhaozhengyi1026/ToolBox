@@ -5,7 +5,8 @@ const elements = {
   multiMdInput: document.querySelector("#multi-md-input"),
   uploadPanel: document.querySelector("#upload-panel"),
   workspace: document.querySelector("#workspace"),
-  documentSelect: document.querySelector("#document-select"),
+  documentList: document.querySelector("#document-list"),
+  documentCount: document.querySelector("#document-count"),
   source: document.querySelector("#markdown-source"),
   sourceMeta: document.querySelector("#source-meta"),
   preview: document.querySelector("#markdown-preview"),
@@ -24,6 +25,9 @@ const state = {
   currentFile: null,
   renderedHtml: "",
   renderTimer: null,
+  renderVersion: 0,
+  selectionVersion: 0,
+  documentContents: new Map(),
 };
 
 const LIMITS = Object.freeze({
@@ -62,12 +66,18 @@ code{padding:.12em .32em;border-radius:3px;background:#f0f2f4;font-family:"Micro
 @page{size:A4;margin:17mm 15mm 18mm}@media print{html{background:#fff}body{max-width:none;margin:0;padding:0;font-size:10.5pt;print-color-adjust:exact;-webkit-print-color-adjust:exact}a{color:inherit}p{orphans:3;widows:3}}
 `;
 
-function showToast(message) {
+function showToast(message, isError = false) {
   elements.toast.textContent = message;
+  elements.toast.classList.toggle("is-error", isError);
   elements.toast.classList.add("is-visible");
   window.clearTimeout(showToast.timer);
   const duration = message.length > 28 ? 4200 : 2800;
   showToast.timer = window.setTimeout(() => elements.toast.classList.remove("is-visible"), duration);
+}
+
+function setExportAvailability(enabled) {
+  elements.downloadHtml.disabled = !enabled;
+  elements.printPdf.disabled = !enabled;
 }
 
 function setStep(step) {
@@ -159,8 +169,8 @@ function readFileAsDataUrl(file) {
         ? `data:${mime};base64,${result.slice(commaIndex + 1)}`
         : result);
     };
-    reader.onerror = () => reject(reader.error || new Error("图片读取失败"));
-    reader.onabort = () => reject(new Error("图片读取已取消"));
+    reader.onerror = () => reject(new Error(`无法读取图片“${file.name}”，请重新选择文件`));
+    reader.onabort = () => reject(new Error(`图片“${file.name}”读取已取消`));
     reader.readAsDataURL(file);
   });
 }
@@ -311,7 +321,10 @@ function enhanceDocument(html) {
 
 async function renderDocument() {
   if (!state.currentFile) return;
+  const renderVersion = ++state.renderVersion;
+  setExportAvailability(false);
   if (!window.marked || !window.DOMPurify) {
+    state.renderedHtml = "";
     updateStatus("转换组件加载失败，请检查网络后刷新页面", true);
     return;
   }
@@ -329,6 +342,7 @@ async function renderDocument() {
 
   try {
     const { markdown, missing } = await embedLocalImages(source, state.currentFile);
+    if (renderVersion !== state.renderVersion) return;
     const rawHtml = window.marked.parse(markdown, { gfm: true, breaks: false });
     const safeHtml = window.DOMPurify.sanitize(rawHtml, { USE_PROFILES: { html: true } });
     let html = enhanceDocument(safeHtml);
@@ -342,16 +356,19 @@ async function renderDocument() {
         : "检查图片路径，或重新选择包含图片的文件夹";
       updateStatus(`已转换，但有 ${missing.length} 张图片未找到`, true, missingImageHint);
     } else {
-      updateStatus("转换完成，所有本地图片已嵌入", false);
+      updateStatus("转换完成", false);
     }
 
     state.renderedHtml = html;
     elements.preview.innerHTML = html;
+    setExportAvailability(true);
     setStep(2);
   } catch (error) {
+    if (renderVersion !== state.renderVersion) return;
     console.error(error);
     state.renderedHtml = "";
-    updateStatus("转换失败", true, "文件可能已损坏；请重新选择文件后再试");
+    setExportAvailability(false);
+    updateStatus("转换失败", true, error?.message || "文件可能已损坏；请重新选择文件后再试");
   }
 }
 
@@ -359,29 +376,77 @@ function updateStatus(message, warning, detail) {
   elements.resultStatus.classList.toggle("has-warning", warning);
   elements.resultStatus.querySelector(".status-icon").textContent = warning ? "!" : "✓";
   elements.resultStatus.querySelector("strong").textContent = message;
-  elements.resultStatus.querySelector("small").textContent = detail || (warning
-    ? "检查图片路径，或重新选择包含图片的文件夹"
-    : "文件只在当前浏览器中处理");
+  const detailElement = elements.resultStatus.querySelector("small");
+  const statusDetail = detail ?? (warning ? "检查图片路径，或重新选择包含图片的文件夹" : "");
+  detailElement.textContent = statusDetail;
+  detailElement.hidden = !statusDetail;
 }
 
 function scheduleRender() {
   window.clearTimeout(state.renderTimer);
+  state.renderVersion += 1;
+  setExportAvailability(false);
   state.renderTimer = window.setTimeout(renderDocument, 280);
 }
 
+function renderDocumentList() {
+  elements.documentList.replaceChildren();
+  elements.documentCount.textContent = String(state.markdownFiles.length);
+  const fragment = document.createDocumentFragment();
+
+  state.markdownFiles.forEach((file, index) => {
+    const path = filePath(file);
+    const parts = path.split("/");
+    const name = parts.pop();
+    const location = parts.join("/") || "根目录";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "document-item";
+    button.classList.toggle("is-active", file === state.currentFile);
+    if (file === state.currentFile) button.setAttribute("aria-current", "page");
+    button.setAttribute("aria-label", `打开 ${path}`);
+    const copy = document.createElement("div");
+    const title = document.createElement("strong");
+    const meta = document.createElement("small");
+    title.textContent = name;
+    meta.textContent = location;
+    copy.append(title, meta);
+    button.appendChild(copy);
+    button.addEventListener("click", () => {
+      if (file !== state.currentFile) selectMarkdown(file, index);
+    });
+    fragment.appendChild(button);
+  });
+
+  elements.documentList.appendChild(fragment);
+}
+
 async function selectMarkdown(file) {
+  const selectionVersion = ++state.selectionVersion;
+  window.clearTimeout(state.renderTimer);
+  state.renderVersion += 1;
+  setExportAvailability(false);
   if (!file) {
     updateStatus("无法打开所选文档", true, "请重新选择 Markdown 文件");
     return false;
   }
   try {
+    const source = state.documentContents.has(file)
+      ? state.documentContents.get(file)
+      : await readMarkdown(file);
+    if (selectionVersion !== state.selectionVersion) return false;
     state.currentFile = file;
-    elements.source.value = await readMarkdown(file);
+    state.documentContents.set(file, source);
+    elements.source.value = source;
+    elements.source.scrollTop = 0;
+    elements.preview.closest(".preview-scroll").scrollTop = 0;
+    renderDocumentList();
     await renderDocument();
     return true;
   } catch (error) {
     console.error(error);
     state.renderedHtml = "";
+    setExportAvailability(false);
     elements.preview.innerHTML = "";
     updateStatus("Markdown 读取失败", true, "文件可能已损坏或已被其他程序移除");
     return false;
@@ -392,7 +457,7 @@ async function loadFiles(files) {
   const receivedFiles = [...files];
   if (!receivedFiles.length) return false;
   if (receivedFiles.length > LIMITS.maxFiles) {
-    showToast(`文件过多：最多一次处理 ${LIMITS.maxFiles} 个文件`);
+    showToast(`文件过多：最多一次处理 ${LIMITS.maxFiles} 个文件`, true);
     return false;
   }
 
@@ -404,7 +469,7 @@ async function loadFiles(files) {
   const unsupportedCount = selectedFiles.length - markdownCandidates.length - imageCandidates.length;
 
   if (markdownCandidates.length > LIMITS.maxMarkdownFiles) {
-    showToast(`Markdown 过多：最多一次处理 ${LIMITS.maxMarkdownFiles} 份`);
+    showToast(`Markdown 过多：最多一次处理 ${LIMITS.maxMarkdownFiles} 份`, true);
     return false;
   }
 
@@ -422,7 +487,7 @@ async function loadFiles(files) {
   const totalBytes = acceptedFiles.reduce((total, file) => total + file.size, 0);
 
   if (totalBytes > LIMITS.maxTotalBytes) {
-    showToast(`文件总计 ${formatSize(totalBytes)}，一次最多处理 ${formatSize(LIMITS.maxTotalBytes)}`);
+    showToast(`文件总计 ${formatSize(totalBytes)}，一次最多处理 ${formatSize(LIMITS.maxTotalBytes)}`, true);
     return false;
   }
 
@@ -434,13 +499,12 @@ async function loadFiles(files) {
     const reason = oversizedMarkdown.length || binaryCount
       ? "Markdown 过大、损坏或不是文本文件"
       : "仅支持 .md 和 .markdown 文件";
-    showToast(`没有可用的 Markdown：${reason}`);
+    showToast(`没有可用的 Markdown：${reason}`, true);
     return false;
   }
 
-  elements.documentSelect.innerHTML = state.markdownFiles.map((file, index) =>
-    `<option value="${index}">${escapeHtml(filePath(file))}</option>`
-  ).join("");
+  state.documentContents = new Map();
+  renderDocumentList();
   elements.uploadPanel.hidden = true;
   elements.workspace.hidden = false;
   const opened = await selectMarkdown(state.markdownFiles[0]);
@@ -459,21 +523,28 @@ async function handleFileSelection(files, failureMessage = "文件读取失败�
   try { return await loadFiles(files); }
   catch (error) {
     console.error(error);
-    showToast(failureMessage);
+    showToast(failureMessage, true);
     return false;
   }
 }
 
 function resetWorkspace() {
+  window.clearTimeout(state.renderTimer);
+  state.renderVersion += 1;
+  state.selectionVersion += 1;
   state.files = [];
   state.markdownFiles = [];
   state.currentFile = null;
   state.renderedHtml = "";
+  state.documentContents = new Map();
   elements.folderInput.value = "";
   elements.fileInput.value = "";
   elements.multiMdInput.value = "";
   elements.source.value = "";
   elements.preview.innerHTML = "";
+  elements.documentList.replaceChildren();
+  elements.documentCount.textContent = "0";
+  setExportAvailability(false);
   elements.workspace.hidden = true;
   elements.uploadPanel.hidden = false;
   setStep(1);
@@ -525,44 +596,59 @@ function buildStandaloneDocument() {
 }
 
 function downloadHtml() {
-  if (!state.renderedHtml) return;
-  const blob = new Blob([buildStandaloneDocument()], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${documentTitle()}.html`;
-  link.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  setStep(3);
-  showToast("HTML 已开始下载");
+  if (!state.renderedHtml) { showToast("当前没有可下载的内容，请先完成转换", true); return; }
+  try {
+    const blob = new Blob([buildStandaloneDocument()], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${documentTitle()}.html`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setStep(3);
+    showToast("HTML 已开始下载");
+  } catch (error) {
+    console.error(error);
+    showToast("HTML 下载失败，请检查浏览器下载权限后重试", true);
+  }
 }
 
 function printPdf() {
-  if (!state.renderedHtml) return;
+  if (!state.renderedHtml) { showToast("当前没有可打印的内容，请先完成转换", true); return; }
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
-    showToast("浏览器阻止了打印窗口，请允许弹出窗口");
+    showToast("浏览器阻止了打印窗口，请允许此网站打开弹出窗口", true);
     return;
   }
-  printWindow.document.open();
-  printWindow.document.write(buildStandaloneDocument());
-  printWindow.document.close();
-  const openPrintDialog = () => {
-    window.setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-    }, 250);
-  };
-  if (printWindow.document.readyState === "complete") openPrintDialog();
-  else printWindow.addEventListener("load", openPrintDialog, { once: true });
-  setStep(3);
+  try {
+    printWindow.document.open();
+    printWindow.document.write(buildStandaloneDocument());
+    printWindow.document.close();
+    const openPrintDialog = () => {
+      window.setTimeout(() => {
+        try { printWindow.focus(); printWindow.print(); }
+        catch (error) { console.error(error); showToast("无法打开打印对话框，请重新尝试", true); }
+      }, 250);
+    };
+    if (printWindow.document.readyState === "complete") openPrintDialog();
+    else printWindow.addEventListener("load", openPrintDialog, { once: true });
+    setStep(3);
+  } catch (error) {
+    console.error(error);
+    printWindow.close();
+    showToast("打印页面生成失败，请重新尝试", true);
+  }
 }
 
 elements.folderInput.addEventListener("change", () => handleFileSelection(elements.folderInput.files, "文件夹读取失败，请重新选择"));
 elements.fileInput.addEventListener("change", () => handleFileSelection(elements.fileInput.files));
 elements.multiMdInput.addEventListener("change", () => handleFileSelection(elements.multiMdInput.files));
-elements.documentSelect.addEventListener("change", () => selectMarkdown(state.markdownFiles[Number(elements.documentSelect.value)]));
-elements.source.addEventListener("input", scheduleRender);
+elements.source.addEventListener("input", () => {
+  if (state.currentFile) state.documentContents.set(state.currentFile, elements.source.value);
+  scheduleRender();
+});
 elements.toc.addEventListener("change", renderDocument);
 elements.numbered.addEventListener("change", renderDocument);
 elements.changeFiles.addEventListener("click", resetWorkspace);
@@ -587,6 +673,10 @@ elements.dropZone.addEventListener("drop", async (event) => {
   try { await handleFileSelection(await filesFromDrop(event.dataTransfer)); }
   catch (error) {
     console.error(error);
-    showToast("读取文件夹失败，请使用选择文件夹按钮");
+    showToast("读取文件夹失败，请使用选择文件夹按钮", true);
   }
 });
+
+if (!window.marked || !window.DOMPurify) {
+  window.setTimeout(() => showToast("转换组件加载失败，请检查网络后刷新页面", true), 300);
+}

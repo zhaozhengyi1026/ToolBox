@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="ToolBox：持续更新个人觉得有用的小工具，目前包含 md2pdf 和 MyACG。">
+    <meta name="description" content="ToolBox：持续更新个人觉得有用的小工具，目前包含 md2pdf、PDF 工作台和 MyACG。">
     <meta name="theme-color" content="#315cde">
     <title>ToolBox · 好用的小工具，放在手边</title>
     <link rel="icon" href="assets/toolbox-mark.svg" type="image/svg+xml">
@@ -23,7 +23,6 @@
 
       <nav class="site-nav" aria-label="主要导航">
         <a href="#tools">工具</a>
-        <a href="#guide">怎么选</a>
         <a class="nav-github" href="https://github.com/sjksndnfkwks/ToolBox" target="_blank" rel="noreferrer">
           GitHub
           <span aria-hidden="true">↗</span>
@@ -88,7 +87,7 @@
         <div class="section-heading reveal">
           <div>
             <p class="section-label">当前收录</p>
-            <h2>两件趁手的小工具</h2>
+            <h2>三件趁手的小工具</h2>
           </div>
           <p>每个工具只解决一类问题。需要哪个，就拿走哪个。</p>
         </div>
@@ -161,23 +160,28 @@
               <a class="text-link" href="阅读小软件/README.md">安装说明 <span aria-hidden="true">→</span></a>
             </div>
           </article>
-        </div>
-      </section>
 
-      <section class="choice-section reveal" id="guide">
-        <div class="choice-copy">
-          <p class="section-label">怎么选</p>
-          <h2>Markdown 里有本地图片？<br>用这里的 md2pdf。</h2>
-          <p>它会把图片一起嵌进 HTML，再通过浏览器生成 PDF，文件挪到别处也能正常显示。</p>
-        </div>
-        <div class="choice-divider" aria-hidden="true"><span>或者</span></div>
-        <div class="choice-alt">
-          <span class="plain-file" aria-hidden="true"><i></i><i></i><i></i></span>
-          <div>
-            <h3>只有纯文字？</h3>
-            <p>不需要下载脚本，直接使用在线版即可。</p>
-            <a class="text-link external-link" href="https://realdennis.github.io/md2pdf/" target="_blank" rel="noreferrer">打开在线 md2pdf <span aria-hidden="true">↗</span></a>
-          </div>
+          <article class="tool-card pdf-tools-card reveal">
+            <div class="pdf-card-copy">
+              <div class="card-topline">
+                <span class="tool-index">PDF / SPLIT / IMAGE</span>
+                <span class="platform-tag">浏览器 · 本地处理</span>
+              </div>
+              <h3>PDF 工作台</h3>
+              <p class="tool-summary">拆分 PDF、为每份文件重新命名，把指定页面转成图片，或压缩整份文档。</p>
+              <ul class="feature-list">
+                <li>按单页拆分，也能自由组合页码</li>
+                <li>勾选特定页数并打包导出图片</li>
+                <li>三档清晰度压缩，文件全程不上传</li>
+              </ul>
+              <div class="card-actions"><a class="button button-dark" href="/pdf-tools">打开 PDF 工作台</a></div>
+            </div>
+            <div class="pdf-tools-visual" aria-hidden="true">
+              <div class="split-source"><b>PDF</b><i></i><i></i><i></i></div>
+              <span class="split-arrow">→</span>
+              <div class="split-results"><span><b>01</b></span><span><b>02</b></span><span><b>JPG</b></span></div>
+            </div>
+          </article>
         </div>
       </section>
 

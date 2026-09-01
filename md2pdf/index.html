@@ -86,10 +86,6 @@
 
         <div class="workspace" id="workspace" hidden>
           <div class="workspace-toolbar">
-            <div class="document-picker">
-              <label for="document-select">当前文档</label>
-              <select id="document-select"></select>
-            </div>
             <div class="option-list" aria-label="转换选项">
               <label><input id="toc-option" type="checkbox"> 生成目录</label>
               <label><input id="number-option" type="checkbox"> 章节编号</label>
@@ -97,35 +93,62 @@
             <button class="plain-button" id="change-files" type="button">重新选文件</button>
           </div>
 
-          <div class="editor-grid">
-            <section class="editor-pane" aria-labelledby="source-title">
-              <div class="pane-title">
-                <h3 id="source-title">Markdown</h3>
-                <span id="source-meta">0 字</span>
+          <div class="workspace-main">
+            <aside class="document-sidebar" aria-labelledby="document-list-title">
+              <div class="sidebar-heading">
+                <div><span>所有文档</span><strong id="document-list-title">文档导航</strong></div>
+                <span class="document-count" id="document-count">0</span>
               </div>
-              <textarea id="markdown-source" spellcheck="false" aria-label="Markdown 源文档"></textarea>
-            </section>
+              <nav class="document-list" id="document-list" aria-label="已上传的 Markdown 文档"></nav>
+            </aside>
 
-            <section class="preview-pane" aria-labelledby="preview-title">
-              <div class="pane-title">
-                <h3 id="preview-title">打印预览</h3>
-                <span>A4</span>
-              </div>
-              <div class="preview-scroll">
-                <article class="markdown-preview" id="markdown-preview"></article>
-              </div>
-            </section>
+            <div class="editor-grid">
+              <section class="editor-pane" aria-labelledby="source-title">
+                <div class="pane-title">
+                  <h3 id="source-title">Markdown 编辑</h3>
+                  <span id="source-meta">0 字</span>
+                </div>
+                <textarea id="markdown-source" spellcheck="false" aria-label="Markdown 源文档，可编辑并滚动查看全部内容"></textarea>
+              </section>
+
+              <section class="preview-pane" aria-labelledby="preview-title">
+                <div class="pane-title">
+                  <h3 id="preview-title">同步预览</h3>
+                  <span>A4 · 可滚动</span>
+                </div>
+                <div class="preview-scroll" tabindex="0" aria-label="Markdown 完整预览，可滚动查看">
+                  <article class="markdown-preview" id="markdown-preview"></article>
+                </div>
+              </section>
+            </div>
           </div>
 
           <div class="result-bar">
             <div class="result-status" id="result-status" role="status" aria-live="polite">
               <span class="status-icon">✓</span>
-              <div><strong>准备就绪</strong><small>本地图片会自动嵌入导出文件</small></div>
+              <div><strong>准备就绪</strong><small>文件只在当前浏览器中处理</small></div>
             </div>
             <div class="export-actions">
-              <button class="button button-secondary" id="download-html" type="button">下载 HTML</button>
-              <button class="button button-primary" id="print-pdf" type="button">打印为 PDF</button>
+              <button class="button button-secondary" id="download-html" type="button" disabled>下载 HTML</button>
+              <button class="button button-primary" id="print-pdf" type="button" disabled>打印为 PDF</button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="selection-guide" aria-labelledby="selection-guide-title">
+        <div class="selection-primary">
+          <p class="panel-label">怎么选</p>
+          <h2 id="selection-guide-title">Markdown 里有本地图片？<br>用这里的 md2pdf。</h2>
+          <p>它会把图片一起嵌进 HTML，再通过浏览器生成 PDF，文件挪到别处也能正常显示。</p>
+        </div>
+        <div class="selection-or" aria-hidden="true"><span>或者</span></div>
+        <div class="selection-alternative">
+          <span class="plain-document" aria-hidden="true"><i></i><i></i><i></i></span>
+          <div>
+            <h3>只有纯文字？</h3>
+            <p>不需要处理本地图片，可以直接使用轻量在线版。</p>
+            <a class="text-link" href="https://realdennis.github.io/md2pdf/" target="_blank" rel="noreferrer">打开在线 md2pdf <span aria-hidden="true">↗</span></a>
           </div>
         </div>
       </section>
