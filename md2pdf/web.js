@@ -3,6 +3,7 @@ const elements = {
   folderInput: document.querySelector("#folder-input"),
   fileInput: document.querySelector("#file-input"),
   multiMdInput: document.querySelector("#multi-md-input"),
+  appendInput: document.querySelector("#append-input"),
   uploadPanel: document.querySelector("#upload-panel"),
   workspace: document.querySelector("#workspace"),
   documentList: document.querySelector("#document-list"),
@@ -12,7 +13,8 @@ const elements = {
   preview: document.querySelector("#markdown-preview"),
   toc: document.querySelector("#toc-option"),
   numbered: document.querySelector("#number-option"),
-  changeFiles: document.querySelector("#change-files"),
+  addFiles: document.querySelector("#add-files"),
+  clearFiles: document.querySelector("#clear-files"),
   downloadHtml: document.querySelector("#download-html"),
   printPdf: document.querySelector("#print-pdf"),
   resultStatus: document.querySelector("#result-status"),
@@ -399,6 +401,8 @@ function renderDocumentList() {
     const parts = path.split("/");
     const name = parts.pop();
     const location = parts.join("/") || "根目录";
+    const row = document.createElement("div");
+    row.className = "document-row";
     const button = document.createElement("button");
     button.type = "button";
     button.className = "document-item";
@@ -415,10 +419,39 @@ function renderDocumentList() {
     button.addEventListener("click", () => {
       if (file !== state.currentFile) selectMarkdown(file, index);
     });
-    fragment.appendChild(button);
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "file-remove-button";
+    remove.textContent = "删除";
+    remove.setAttribute("aria-label", `删除 ${path}`);
+    remove.addEventListener("click", () => removeMarkdownFile(file));
+    row.append(button, remove);
+    fragment.appendChild(row);
   });
 
   elements.documentList.appendChild(fragment);
+}
+
+async function removeMarkdownFile(file) {
+  if (!state.markdownFiles.includes(file)) return;
+  if (!window.confirm(`删除“${file.name}”？当前编辑内容也会一起清除。`)) return;
+  const removedIndex = state.markdownFiles.indexOf(file);
+  const wasCurrent = file === state.currentFile;
+  state.files = state.files.filter((entry) => entry !== file);
+  state.markdownFiles = state.markdownFiles.filter((entry) => entry !== file);
+  state.documentContents.delete(file);
+  if (!state.markdownFiles.length) {
+    resetWorkspace();
+    showToast("已删除最后一份文档，工作区已清空");
+    return;
+  }
+  if (wasCurrent) {
+    state.currentFile = null;
+    await selectMarkdown(state.markdownFiles[Math.min(removedIndex, state.markdownFiles.length - 1)]);
+  } else {
+    renderDocumentList();
+  }
+  showToast(`已删除 ${file.name}`);
 }
 
 async function selectMarkdown(file) {
@@ -453,16 +486,17 @@ async function selectMarkdown(file) {
   }
 }
 
-async function loadFiles(files) {
+async function loadFiles(files, append = false) {
   const receivedFiles = [...files];
   if (!receivedFiles.length) return false;
-  if (receivedFiles.length > LIMITS.maxFiles) {
-    showToast(`文件过多：最多一次处理 ${LIMITS.maxFiles} 个文件`, true);
-    return false;
-  }
 
   const unique = new Map();
+  if (append) state.files.forEach((file) => unique.set(filePath(file).toLowerCase(), file));
   for (const file of receivedFiles) unique.set(filePath(file).toLowerCase(), file);
+  if (unique.size > LIMITS.maxFiles) {
+    showToast(`文件过多：工作区最多保留 ${LIMITS.maxFiles} 个文件`, true);
+    return false;
+  }
   const selectedFiles = [...unique.values()];
   const markdownCandidates = selectedFiles.filter(isMarkdownFile);
   const imageCandidates = selectedFiles.filter((file) => !isMarkdownFile(file) && isImageFile(file));
@@ -491,6 +525,8 @@ async function loadFiles(files) {
     return false;
   }
 
+  const previousCurrent = state.currentFile;
+  const previousContents = state.documentContents;
   state.files = acceptedFiles;
   state.markdownFiles = acceptedMarkdown
     .sort((a, b) => filePath(a).localeCompare(filePath(b), "zh-CN"));
@@ -503,14 +539,22 @@ async function loadFiles(files) {
     return false;
   }
 
-  state.documentContents = new Map();
+  state.documentContents = append
+    ? new Map([...previousContents].filter(([file]) => state.markdownFiles.includes(file)))
+    : new Map();
   renderDocumentList();
   elements.uploadPanel.hidden = true;
   elements.workspace.hidden = false;
-  const opened = await selectMarkdown(state.markdownFiles[0]);
+  const target = append && state.markdownFiles.includes(previousCurrent) ? previousCurrent : state.markdownFiles[0];
+  const opened = await selectMarkdown(target);
   if (!opened) return false;
-  elements.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (!append) elements.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
   const notices = [];
+  if (append) {
+    const addedMarkdown = acceptedMarkdown.filter((file) => receivedFiles.includes(file)).length;
+    const addedImages = acceptedImages.filter((file) => receivedFiles.includes(file)).length;
+    if (addedMarkdown || addedImages) notices.push(`已加入 ${addedMarkdown} 份 Markdown、${addedImages} 张图片`);
+  }
   if (unsupportedCount) notices.push(`忽略 ${unsupportedCount} 个无关文件`);
   if (oversizedMarkdown.length) notices.push(`跳过 ${oversizedMarkdown.length} 份超过 10MB 的 Markdown`);
   if (oversizedImages.length) notices.push(`跳过 ${oversizedImages.length} 张超过 25MB 的图片`);
@@ -519,8 +563,8 @@ async function loadFiles(files) {
   return true;
 }
 
-async function handleFileSelection(files, failureMessage = "文件读取失败，请重新选择") {
-  try { return await loadFiles(files); }
+async function handleFileSelection(files, failureMessage = "文件读取失败，请重新选择", append = false) {
+  try { return await loadFiles(files, append); }
   catch (error) {
     console.error(error);
     showToast(failureMessage, true);
@@ -540,6 +584,7 @@ function resetWorkspace() {
   elements.folderInput.value = "";
   elements.fileInput.value = "";
   elements.multiMdInput.value = "";
+  elements.appendInput.value = "";
   elements.source.value = "";
   elements.preview.innerHTML = "";
   elements.documentList.replaceChildren();
@@ -642,16 +687,28 @@ function printPdf() {
   }
 }
 
-elements.folderInput.addEventListener("change", () => handleFileSelection(elements.folderInput.files, "文件夹读取失败，请重新选择"));
-elements.fileInput.addEventListener("change", () => handleFileSelection(elements.fileInput.files));
-elements.multiMdInput.addEventListener("change", () => handleFileSelection(elements.multiMdInput.files));
+async function handleInput(input, failureMessage, append = false) {
+  const files = [...input.files];
+  input.value = "";
+  return handleFileSelection(files, failureMessage, append);
+}
+
+elements.folderInput.addEventListener("change", () => handleInput(elements.folderInput, "文件夹读取失败，请重新选择"));
+elements.fileInput.addEventListener("change", () => handleInput(elements.fileInput, "文件读取失败，请重新选择"));
+elements.multiMdInput.addEventListener("change", () => handleInput(elements.multiMdInput, "文件读取失败，请重新选择"));
+elements.appendInput.addEventListener("change", () => handleInput(elements.appendInput, "追加文件失败，请重新选择", true));
 elements.source.addEventListener("input", () => {
   if (state.currentFile) state.documentContents.set(state.currentFile, elements.source.value);
   scheduleRender();
 });
 elements.toc.addEventListener("change", renderDocument);
 elements.numbered.addEventListener("change", renderDocument);
-elements.changeFiles.addEventListener("click", resetWorkspace);
+elements.addFiles.addEventListener("click", () => elements.appendInput.click());
+elements.clearFiles.addEventListener("click", () => {
+  if (!window.confirm("清空全部文件？尚未下载的编辑内容也会一起清除。")) return;
+  resetWorkspace();
+  showToast("已清空所有文件");
+});
 elements.downloadHtml.addEventListener("click", downloadHtml);
 elements.printPdf.addEventListener("click", printPdf);
 

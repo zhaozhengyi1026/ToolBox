@@ -6,7 +6,7 @@ const MODE_COPY = Object.freeze({ split: { title: "拆分 PDF", kicker: "PDF SPL
 const state = { mode: null, documents: [], currentIndex: 0, busy: false, drag: null, ignoreNextClick: false };
 const $ = (selector) => document.querySelector(selector);
 const elements = {
-  entries: $("#tool-entries"), shell: $("#tool-shell"), modeBack: $("#mode-back"), workbenchTitle: $("#workbench-title"), uploadKicker: $("#upload-kicker"), uploadView: $("#upload-view"), input: $("#pdf-input"), dropZone: $("#drop-zone"), workspace: $("#workspace"), workspaceModeTitle: $("#workspace-mode-title"), workspaceFileCount: $("#workspace-file-count"), changeFiles: $("#change-files"), fileList: $("#file-list"), fileCount: $("#file-count"),
+  entries: $("#tool-entries"), shell: $("#tool-shell"), modeBack: $("#mode-back"), workbenchTitle: $("#workbench-title"), uploadKicker: $("#upload-kicker"), uploadView: $("#upload-view"), input: $("#pdf-input"), addInput: $("#add-pdf-input"), dropZone: $("#drop-zone"), workspace: $("#workspace"), workspaceModeTitle: $("#workspace-mode-title"), workspaceFileCount: $("#workspace-file-count"), addPdfs: $("#add-pdfs"), clearPdfs: $("#clear-pdfs"), fileList: $("#file-list"), fileCount: $("#file-count"),
   pageWorkspace: $("#page-workspace"), fileName: $("#file-name"), fileMeta: $("#file-meta"), pageWindowLabel: $("#page-window-label"), pageInput: $("#selected-pages"), selectedCount: $("#selected-count"), pageGrid: $("#page-grid"), previousSet: $("#previous-page-set"), nextSet: $("#next-page-set"), paginationLabel: $("#pagination-label"),
   splitPanel: $("#split-panel"), addSplit: $("#add-split"), splitSingle: $("#split-single"), splitList: $("#split-list"), splitEmpty: $("#split-empty"), splitBar: $("#split-download-bar"), splitCount: $("#split-count"), downloadPdfs: $("#download-all-pdfs"),
   imagePanel: $("#image-panel"), imageFormat: $("#image-format"), imageScale: $("#image-scale"), imageTitle: $("#image-selection-title"), imageCopy: $("#image-selection-copy"), downloadImages: $("#download-images"),
@@ -128,6 +128,7 @@ async function returnToEntries() {
   await destroyDocuments();
   state.mode = null;
   elements.input.value = "";
+  elements.addInput.value = "";
   elements.shell.hidden = true;
   elements.entries.hidden = false;
   elements.entries.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -137,6 +138,10 @@ async function resetUpload() {
   if (state.busy) return;
   await destroyDocuments();
   elements.input.value = "";
+  elements.addInput.value = "";
+  elements.fileList.replaceChildren();
+  elements.fileCount.textContent = "0";
+  elements.workspaceFileCount.textContent = "0 份文件";
   elements.workspace.hidden = true;
   elements.uploadView.hidden = false;
 }
@@ -162,18 +167,25 @@ async function loadPdfFile(file) {
   };
 }
 
-async function loadFiles(fileList) {
+function fileSignature(file) { return `${file.name.toLowerCase()}\u0000${file.size}\u0000${file.lastModified}`; }
+
+async function loadFiles(fileList, append = false) {
   if (state.busy) return;
   const received = [...fileList];
   if (!received.length) { notify("没有读取到文件，请重新选择 PDF。", true); return; }
   if (!librariesReady) { notify("PDF 组件加载失败，请检查网络后刷新页面。", true); return; }
-  if (received.length > LIMITS.maxFiles) { notify(`一次最多选择 ${LIMITS.maxFiles} 份 PDF。`, true); return; }
-  const pdfCandidates = received.filter((file) => /\.pdf$/i.test(file.name) || file.type === "application/pdf");
-  if (!pdfCandidates.length) { notify("没有找到 PDF 文件，请选择扩展名为 .pdf 的文件。", true); return; }
-  const totalBytes = pdfCandidates.reduce((sum, file) => sum + file.size, 0);
+  const receivedPdfs = received.filter((file) => /\.pdf$/i.test(file.name) || file.type === "application/pdf");
+  if (!receivedPdfs.length) { notify("没有找到 PDF 文件，请选择扩展名为 .pdf 的文件。", true); return; }
+  const existingSignatures = new Set(append ? state.documents.map((document) => fileSignature(document.file)) : []);
+  const unique = new Map();
+  receivedPdfs.forEach((file) => unique.set(fileSignature(file), file));
+  const duplicateCount = append ? [...unique.keys()].filter((signature) => existingSignatures.has(signature)).length : receivedPdfs.length - unique.size;
+  const pdfCandidates = [...unique].filter(([signature]) => !existingSignatures.has(signature)).map(([, file]) => file);
+  if (state.documents.length + pdfCandidates.length > LIMITS.maxFiles) { notify(`工作区最多保留 ${LIMITS.maxFiles} 份 PDF。`, true); return; }
+  if (!pdfCandidates.length) { notify("这些 PDF 已经在工作区中，无需重复添加。", true); return; }
+  const totalBytes = state.documents.reduce((sum, document) => sum + document.file.size, 0) + pdfCandidates.reduce((sum, file) => sum + file.size, 0);
   if (totalBytes > LIMITS.maxTotalBytes) { notify(`所选文件共 ${formatBytes(totalBytes)}，超过 300MB 总上限。`, true); return; }
 
-  await destroyDocuments();
   const accepted = [];
   const rejected = [];
   setBusy(true, "正在读取 PDF", `准备检查 ${pdfCandidates.length} 份文件`);
@@ -191,16 +203,22 @@ async function loadFiles(fileList) {
     notify(rejected[0] || "没有可处理的 PDF 文件。", true);
     return;
   }
-  state.documents = accepted;
-  state.currentIndex = 0;
+  if (append) state.documents.push(...accepted);
+  else {
+    await destroyDocuments();
+    state.documents = accepted;
+    state.currentIndex = 0;
+  }
   elements.uploadView.hidden = true;
   elements.workspace.hidden = false;
   renderWorkspace();
-  if (received.length !== pdfCandidates.length || rejected.length) {
-    const ignored = received.length - pdfCandidates.length;
+  if (append && accepted.length) notify(`已加入 ${accepted.length} 份 PDF`);
+  if (received.length !== receivedPdfs.length || rejected.length || duplicateCount) {
+    const ignored = received.length - receivedPdfs.length;
     const notices = [];
     if (ignored) notices.push(`忽略 ${ignored} 个非 PDF 文件`);
     if (rejected.length) notices.push(`跳过 ${rejected.length} 份无法处理的 PDF`);
+    if (duplicateCount) notices.push(`忽略 ${duplicateCount} 份重复 PDF`);
     notify(notices.join("；"), true);
   }
 }
@@ -228,6 +246,8 @@ function renderFileList() {
   elements.fileList.replaceChildren();
   const fragment = document.createDocumentFragment();
   state.documents.forEach((pdfDocument, index) => {
+    const row = document.createElement("div");
+    row.className = "file-row";
     const button = document.createElement("button");
     button.type = "button";
     button.className = "file-item";
@@ -247,9 +267,33 @@ function renderFileList() {
       renderFileList();
       if (state.mode !== "compress") renderCurrentDocument();
     });
-    fragment.appendChild(button);
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "file-remove-button";
+    remove.textContent = "删除";
+    remove.setAttribute("aria-label", `删除 ${pdfDocument.file.name}`);
+    remove.addEventListener("click", () => removePdfDocument(pdfDocument));
+    row.append(button, remove);
+    fragment.appendChild(row);
   });
   elements.fileList.appendChild(fragment);
+}
+
+async function removePdfDocument(pdfDocument) {
+  if (state.busy || !state.documents.includes(pdfDocument)) return;
+  if (!window.confirm(`删除“${pdfDocument.file.name}”？该文件的选页、拆分项和处理结果也会清除。`)) return;
+  const removedIndex = state.documents.indexOf(pdfDocument);
+  state.documents.splice(removedIndex, 1);
+  try { await pdfDocument.pdf?.destroy(); } catch { /* 文件已释放 */ }
+  if (!state.documents.length) {
+    await resetUpload();
+    notify("已删除最后一份 PDF，工作区已清空");
+    return;
+  }
+  if (removedIndex < state.currentIndex) state.currentIndex -= 1;
+  else if (state.currentIndex >= state.documents.length) state.currentIndex = state.documents.length - 1;
+  renderWorkspace();
+  notify(`已删除 ${pdfDocument.file.name}`);
 }
 
 function renderCurrentDocument() {
@@ -679,8 +723,14 @@ async function compressAll() {
 
 document.querySelectorAll("[data-enter-mode]").forEach((button) => button.addEventListener("click", () => enterMode(button.dataset.enterMode)));
 elements.modeBack.addEventListener("click", returnToEntries);
-elements.changeFiles.addEventListener("click", resetUpload);
-elements.input.addEventListener("change", (event) => loadFiles(event.target.files));
+elements.addPdfs.addEventListener("click", () => elements.addInput.click());
+elements.clearPdfs.addEventListener("click", async () => {
+  if (!window.confirm("清空全部 PDF？所有选页、拆分项和处理结果也会一起清除。")) return;
+  await resetUpload();
+  notify("已清空所有 PDF");
+});
+elements.input.addEventListener("change", (event) => { const files = [...event.target.files]; event.target.value = ""; loadFiles(files); });
+elements.addInput.addEventListener("change", (event) => { const files = [...event.target.files]; event.target.value = ""; loadFiles(files, true); });
 elements.dropZone.addEventListener("dragover", (event) => { event.preventDefault(); elements.dropZone.classList.add("is-dragging"); });
 elements.dropZone.addEventListener("dragleave", () => elements.dropZone.classList.remove("is-dragging"));
 elements.dropZone.addEventListener("drop", (event) => { event.preventDefault(); elements.dropZone.classList.remove("is-dragging"); loadFiles(event.dataTransfer.files); });

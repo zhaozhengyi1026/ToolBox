@@ -438,6 +438,10 @@ h1 em {
   font-weight: 700;
 }
 
+.workspace-file-actions { display: flex; align-items: center; gap: 16px; }
+.danger-button { border-color: #d8a7a7; color: #a54848; }
+.danger-button:hover { border-color: #a54848; color: #8e3030; }
+
 .workspace-main {
   display: grid;
   height: min(720px, 75vh);
@@ -476,11 +480,13 @@ h1 em {
   overscroll-behavior: contain;
 }
 
+.document-row { display: grid; margin-bottom: 6px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 5px; }
+
 .document-item {
   display: grid;
   width: 100%;
   min-height: 58px;
-  margin-bottom: 6px;
+  margin-bottom: 0;
   padding: 9px 10px 9px 13px;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -501,6 +507,8 @@ h1 em {
 .document-item small { margin-top: 2px; color: #8791a4; font-size: 11px; }
 .document-item::after { color: #9ba8c3; content: "→"; font-size: 13px; }
 .document-item.is-active::after { color: var(--blue); }
+.file-remove-button { min-height: 34px; padding: 0 7px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #9a5a5a; cursor: pointer; font-size: 11px; }
+.file-remove-button:hover { border-color: #e3c3c3; background: #fff5f5; color: #943c3c; }
 
 .editor-grid {
   display: grid;
@@ -789,7 +797,7 @@ footer p { margin: 0; }
   .workspace-main { height: auto; grid-template-columns: 1fr; overflow: visible; }
   .document-sidebar { max-height: 230px; border-right: 0; border-bottom: 1px solid var(--line); }
   .document-list { display: grid; height: auto; max-height: 165px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
-  .document-item { margin-bottom: 0; }
+  .document-row { margin-bottom: 0; }
   .editor-grid { min-height: 1050px; grid-template-columns: 1fr; }
   .editor-pane { min-height: 430px; }
   .preview-pane { min-height: 620px; border-top: 1px solid var(--line); border-left: 0; }
@@ -810,6 +818,7 @@ footer p { margin: 0; }
   .drop-zone h3 { font-size: 23px; }
   .upload-actions { width: 100%; flex-direction: column; }
   .workspace-toolbar { align-items: flex-start; flex-direction: column; gap: 12px; padding: 15px; }
+  .workspace-file-actions { width: 100%; justify-content: space-between; }
   .document-list { grid-template-columns: 1fr; }
   .plain-button { align-self: flex-start; }
   .preview-scroll { padding: 12px; }

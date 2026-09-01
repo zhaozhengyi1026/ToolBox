@@ -55,12 +55,13 @@
             <span class="button button-primary">选择 PDF 文件</span>
           </label>
           <input id="pdf-input" type="file" accept="application/pdf,.pdf" multiple hidden>
+          <input id="add-pdf-input" type="file" accept="application/pdf,.pdf" multiple hidden>
         </div>
 
         <div class="workspace" id="workspace" hidden>
           <div class="workspace-toolbar">
             <div><span class="mini-pdf">PDF</span><strong id="workspace-mode-title">拆分 PDF</strong><small id="workspace-file-count">0 份文件</small></div>
-            <button class="text-button" id="change-files" type="button">重新选择文件</button>
+            <div class="workspace-file-actions"><button class="text-button" id="add-pdfs" type="button">＋ 继续上传</button><button class="text-button danger-button" id="clear-pdfs" type="button">清空全部</button></div>
           </div>
 
           <div class="workspace-layout">

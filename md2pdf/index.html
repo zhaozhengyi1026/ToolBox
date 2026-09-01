@@ -81,7 +81,11 @@
               <label><input id="toc-option" type="checkbox"> 生成目录</label>
               <label><input id="number-option" type="checkbox"> 章节编号</label>
             </div>
-            <button class="plain-button" id="change-files" type="button">重新选文件</button>
+            <div class="workspace-file-actions">
+              <button class="plain-button" id="add-files" type="button">＋ 继续上传</button>
+              <button class="plain-button danger-button" id="clear-files" type="button">清空全部</button>
+            </div>
+            <input id="append-input" type="file" accept=".md,.markdown,text/markdown,image/*" multiple hidden>
           </div>
 
           <div class="workspace-main">
