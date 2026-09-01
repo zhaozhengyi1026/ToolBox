@@ -4,11 +4,11 @@
 
 ## 工具列表
 
-### md2pdf
+### MD 转换成 PDF
 
 将 Markdown 文档转换为便于阅读、打印的独立 HTML，也可以继续调用 Chrome 或 Edge 生成 PDF。
 
-> 这个工具更适合 Markdown 中引用了本地图片的情况。如果文档只有纯文字，可以直接使用在线工具 [md2pdf](https://realdennis.github.io/md2pdf/)。
+> 这个工具更适合 Markdown 中引用了本地图片的情况。如果文档只有纯文字，可以直接使用这个[轻量在线工具](https://realdennis.github.io/md2pdf/)。
 
 仓库同时提供两个版本：
 
@@ -20,7 +20,7 @@
 - 支持嵌入本地图片
 - 支持自动生成 PDF
 
-详细说明请查看 [md2pdf 使用说明](md2pdf/md_to_html使用说明.md)。
+详细说明请查看 [MD 转换成 PDF 使用说明](md2pdf/md_to_html使用说明.md)。
 
 ### PDF 工作台
 
@@ -34,6 +34,12 @@
 - 提供三档 PDF 压缩预设，并清楚显示每份文件压缩前后的体积。
 
 浏览器版入口位于 [`pdf-tools`](pdf-tools/index.html)。
+
+### MailDock 临时邮箱
+
+用于临时接收验证码和测试邮件，可同时创建 10 分钟与 1 小时邮箱。临时邮箱不适合银行、医疗、付费服务或其他需要长期找回的账号。
+
+在线入口：[打开 MailDock](https://maildock-liard.vercel.app/)
 
 ### MyACG
 

@@ -51,10 +51,12 @@ h1 em::after { position: absolute; right: 0; bottom: -8px; left: 2px; height: 8p
 .privacy-note strong { font-size: 16px; }
 .privacy-note p { margin: 3px 0 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
 
-.tool-entries { width: min(1180px, calc(100% - 48px)); margin: 0 auto 115px; }
-.entries-heading { margin-bottom: 34px; }
+.tool-entries { width: min(1180px, calc(100% - 48px)); margin: 48px auto 76px; }
+.entries-heading { display: flex; margin-bottom: 30px; align-items: end; justify-content: space-between; gap: 32px; }
 .entries-heading .panel-label { margin-bottom: 7px; }
-.entries-heading h2 { margin: 0; font-size: clamp(32px,4vw,44px); letter-spacing: -.045em; }
+.entries-heading h1 { margin: 0; font-size: clamp(32px,4vw,44px); letter-spacing: -.045em; }
+.entries-heading > p { max-width: 440px; margin: 0 0 4px; color: var(--muted); font-size: 14px; }
+.entries-heading > p strong { color: var(--green); }
 .entry-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; }
 .entry-card { position: relative; display: flex; min-height: 430px; padding: 24px 27px 28px; overflow: hidden; flex-direction: column; border: 1px solid var(--line); border-radius: 18px; background: white; text-align: left; cursor: pointer; transition: transform .2s, border-color .2s, box-shadow .2s; }
 .entry-card:hover { transform: translateY(-5px); border-color: #aebce0; box-shadow: 0 18px 45px rgba(38,54,96,.12); }
@@ -247,9 +249,9 @@ footer p { margin: 0; }
 }
 
 @media (max-width: 600px) {
-  .site-header,.intro,.tool-entries,.tool-shell,footer { width: min(100% - 28px,1240px); }
-  .intro { padding-top: 45px; }
-  h1 { font-size: 46px; }
+  .site-header,.tool-entries,.tool-shell,footer { width: min(100% - 28px,1240px); }
+  .tool-entries { margin-top: 28px; }
+  .entries-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
   .entry-card { min-height: 330px; }
   .entry-symbol { right: -45px; top: 22px; transform: scale(.76); opacity: .28; }
   .entry-card > p { max-width: 100%; }
