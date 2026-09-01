@@ -10,7 +10,7 @@ const elements = {
   pageWorkspace: $("#page-workspace"), fileName: $("#file-name"), fileMeta: $("#file-meta"), pageWindowLabel: $("#page-window-label"), pageInput: $("#selected-pages"), selectedCount: $("#selected-count"), pageGrid: $("#page-grid"), previousSet: $("#previous-page-set"), nextSet: $("#next-page-set"), paginationLabel: $("#pagination-label"),
   splitPanel: $("#split-panel"), addSplit: $("#add-split"), splitSingle: $("#split-single"), splitList: $("#split-list"), splitEmpty: $("#split-empty"), splitBar: $("#split-download-bar"), splitCount: $("#split-count"), downloadPdfs: $("#download-all-pdfs"),
   imagePanel: $("#image-panel"), imageFormat: $("#image-format"), imageScale: $("#image-scale"), imageTitle: $("#image-selection-title"), imageCopy: $("#image-selection-copy"), downloadImages: $("#download-images"),
-  compressPanel: $("#compress-panel"), compressionList: $("#compression-list"), compressSummary: $("#compress-summary"), compressPdf: $("#compress-pdf"), overlay: $("#loading-overlay"), loadingTitle: $("#loading-title"), loadingDetail: $("#loading-detail"), toast: $("#toast")
+  compressPanel: $("#compress-panel"), compressionList: $("#compression-list"), compressSummary: $("#compress-summary"), compressPdf: $("#compress-pdf"), overlay: $("#loading-overlay"), loadingTitle: $("#loading-title"), loadingDetail: $("#loading-detail"), toast: $("#toast"), confirmModal: $("#confirm-modal"), confirmTitle: $("#confirm-title"), confirmMessage: $("#confirm-message"), confirmCancel: $("#confirm-cancel"), confirmSubmit: $("#confirm-submit")
 };
 
 const librariesReady = Boolean(window.pdfjsLib && window.PDFLib && window.JSZip);
@@ -24,6 +24,45 @@ function notify(message, isError = false) {
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => elements.toast.classList.remove("is-visible"), message.length > 32 ? 5200 : 3200);
 }
+
+let confirmationResolver = null;
+let confirmationFocus = null;
+function closeConfirmation(confirmed) {
+  if (elements.confirmModal.hidden) return;
+  elements.confirmModal.hidden = true;
+  document.body.classList.remove("modal-open");
+  const resolve = confirmationResolver;
+  confirmationResolver = null;
+  resolve?.(confirmed);
+  if (confirmationFocus?.isConnected) confirmationFocus.focus();
+  confirmationFocus = null;
+}
+
+function askConfirmation(title, message, confirmLabel = "确认") {
+  if (confirmationResolver) closeConfirmation(false);
+  confirmationFocus = document.activeElement;
+  elements.confirmTitle.textContent = title;
+  elements.confirmMessage.textContent = message;
+  elements.confirmSubmit.textContent = confirmLabel;
+  elements.confirmModal.hidden = false;
+  document.body.classList.add("modal-open");
+  elements.confirmCancel.focus();
+  return new Promise((resolve) => { confirmationResolver = resolve; });
+}
+
+elements.confirmCancel.addEventListener("click", () => closeConfirmation(false));
+elements.confirmSubmit.addEventListener("click", () => closeConfirmation(true));
+elements.confirmModal.addEventListener("click", (event) => { if (event.target === elements.confirmModal) closeConfirmation(false); });
+elements.confirmModal.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") { event.preventDefault(); closeConfirmation(false); return; }
+  if (event.key !== "Tab") return;
+  const buttons = [elements.confirmCancel, elements.confirmSubmit];
+  const index = buttons.indexOf(document.activeElement);
+  if ((!event.shiftKey && index === buttons.length - 1) || (event.shiftKey && index <= 0)) {
+    event.preventDefault();
+    buttons[event.shiftKey ? buttons.length - 1 : 0].focus();
+  }
+});
 
 function setBusy(busy, title = "正在处理", detail = "请不要关闭页面") {
   state.busy = busy;
@@ -281,7 +320,7 @@ function renderFileList() {
 
 async function removePdfDocument(pdfDocument) {
   if (state.busy || !state.documents.includes(pdfDocument)) return;
-  if (!window.confirm(`删除“${pdfDocument.file.name}”？该文件的选页、拆分项和处理结果也会清除。`)) return;
+  if (!await askConfirmation("删除 PDF", `删除“${pdfDocument.file.name}”？该文件的选页、拆分项和处理结果也会清除。`, "删除")) return;
   const removedIndex = state.documents.indexOf(pdfDocument);
   state.documents.splice(removedIndex, 1);
   try { await pdfDocument.pdf?.destroy(); } catch { /* 文件已释放 */ }
@@ -725,7 +764,7 @@ document.querySelectorAll("[data-enter-mode]").forEach((button) => button.addEve
 elements.modeBack.addEventListener("click", returnToEntries);
 elements.addPdfs.addEventListener("click", () => elements.addInput.click());
 elements.clearPdfs.addEventListener("click", async () => {
-  if (!window.confirm("清空全部 PDF？所有选页、拆分项和处理结果也会一起清除。")) return;
+  if (!await askConfirmation("清空全部 PDF", "所有 PDF、选页、拆分项和处理结果都会清除。", "清空全部")) return;
   await resetUpload();
   notify("已清空所有 PDF");
 });

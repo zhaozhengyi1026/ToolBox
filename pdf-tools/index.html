@@ -116,6 +116,14 @@
 
     </main>
     <footer><a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>ToolBox</span></a><p>所有 PDF 处理均在本地浏览器中完成。</p></footer>
+    <div class="confirm-modal" id="confirm-modal" hidden>
+      <section class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+        <span class="confirm-icon" aria-hidden="true">!</span>
+        <h2 id="confirm-title">确认操作</h2>
+        <p id="confirm-message"></p>
+        <div class="confirm-actions"><button class="button button-secondary" id="confirm-cancel" type="button">取消</button><button class="button confirm-submit" id="confirm-submit" type="button">确认</button></div>
+      </section>
+    </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </body>
 </html>

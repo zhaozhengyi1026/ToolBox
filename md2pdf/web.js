@@ -19,6 +19,11 @@ const elements = {
   printPdf: document.querySelector("#print-pdf"),
   resultStatus: document.querySelector("#result-status"),
   toast: document.querySelector("#toast"),
+  confirmModal: document.querySelector("#confirm-modal"),
+  confirmTitle: document.querySelector("#confirm-title"),
+  confirmMessage: document.querySelector("#confirm-message"),
+  confirmCancel: document.querySelector("#confirm-cancel"),
+  confirmSubmit: document.querySelector("#confirm-submit"),
 };
 
 const state = {
@@ -76,6 +81,45 @@ function showToast(message, isError = false) {
   const duration = message.length > 28 ? 4200 : 2800;
   showToast.timer = window.setTimeout(() => elements.toast.classList.remove("is-visible"), duration);
 }
+
+let confirmationResolver = null;
+let confirmationFocus = null;
+function closeConfirmation(confirmed) {
+  if (elements.confirmModal.hidden) return;
+  elements.confirmModal.hidden = true;
+  document.body.classList.remove("modal-open");
+  const resolve = confirmationResolver;
+  confirmationResolver = null;
+  resolve?.(confirmed);
+  if (confirmationFocus?.isConnected) confirmationFocus.focus();
+  confirmationFocus = null;
+}
+
+function askConfirmation(title, message, confirmLabel = "确认") {
+  if (confirmationResolver) closeConfirmation(false);
+  confirmationFocus = document.activeElement;
+  elements.confirmTitle.textContent = title;
+  elements.confirmMessage.textContent = message;
+  elements.confirmSubmit.textContent = confirmLabel;
+  elements.confirmModal.hidden = false;
+  document.body.classList.add("modal-open");
+  elements.confirmCancel.focus();
+  return new Promise((resolve) => { confirmationResolver = resolve; });
+}
+
+elements.confirmCancel.addEventListener("click", () => closeConfirmation(false));
+elements.confirmSubmit.addEventListener("click", () => closeConfirmation(true));
+elements.confirmModal.addEventListener("click", (event) => { if (event.target === elements.confirmModal) closeConfirmation(false); });
+elements.confirmModal.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") { event.preventDefault(); closeConfirmation(false); return; }
+  if (event.key !== "Tab") return;
+  const buttons = [elements.confirmCancel, elements.confirmSubmit];
+  const index = buttons.indexOf(document.activeElement);
+  if ((!event.shiftKey && index === buttons.length - 1) || (event.shiftKey && index <= 0)) {
+    event.preventDefault();
+    buttons[event.shiftKey ? buttons.length - 1 : 0].focus();
+  }
+});
 
 function setExportAvailability(enabled) {
   elements.downloadHtml.disabled = !enabled;
@@ -434,7 +478,7 @@ function renderDocumentList() {
 
 async function removeMarkdownFile(file) {
   if (!state.markdownFiles.includes(file)) return;
-  if (!window.confirm(`删除“${file.name}”？当前编辑内容也会一起清除。`)) return;
+  if (!await askConfirmation("删除文档", `删除“${file.name}”？当前编辑内容也会一起清除。`, "删除")) return;
   const removedIndex = state.markdownFiles.indexOf(file);
   const wasCurrent = file === state.currentFile;
   state.files = state.files.filter((entry) => entry !== file);
@@ -704,8 +748,8 @@ elements.source.addEventListener("input", () => {
 elements.toc.addEventListener("change", renderDocument);
 elements.numbered.addEventListener("change", renderDocument);
 elements.addFiles.addEventListener("click", () => elements.appendInput.click());
-elements.clearFiles.addEventListener("click", () => {
-  if (!window.confirm("清空全部文件？尚未下载的编辑内容也会一起清除。")) return;
+elements.clearFiles.addEventListener("click", async () => {
+  if (!await askConfirmation("清空全部文件", "所有 Markdown、图片和尚未下载的编辑内容都会清除。", "清空全部")) return;
   resetWorkspace();
   showToast("已清空所有文件");
 });
