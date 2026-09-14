@@ -121,12 +121,16 @@ h1,h2,h3,p { margin-top:0; }
 .preset-grid small { margin-top:4px; color:var(--muted); }
 .preset-grid em { margin-top:auto; color:var(--blue); font-size:12px; font-style:normal; font-weight:700; }
 .compression-list { display:grid; margin-top:20px; gap:8px; }
-.compression-row { display:grid; min-height:66px; padding:10px 13px; grid-template-columns:minmax(160px,1fr) auto minmax(210px,auto); align-items:center; gap:16px; border:1px solid var(--line); border-radius:9px; background:#fbfcff; }
+.compression-row { display:grid; min-height:78px; padding:10px 13px; grid-template-columns:minmax(160px,1fr) minmax(118px,auto) minmax(190px,auto); align-items:center; gap:10px; border:1px solid var(--line); border-radius:9px; background:#fbfcff; }
 .compression-row strong,.compression-row small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .compression-row small { color:var(--muted); }
-.size-info { color:#57647c; font-size:13px; white-space:nowrap; }
-.size-info b { color:var(--ink); }
-.size-info em { margin-left:8px; color:var(--green); font-style:normal; font-weight:700; }
+.size-info { display:grid; min-height:54px; padding:7px 10px; grid-template-columns:max-content max-content; align-content:center; justify-content:start; column-gap:8px; border-radius:7px; background:#eef1f7; color:#57647c; font-size:12px; white-space:nowrap; }
+.size-info span { display:block; grid-column:1/-1; line-height:1.3; }
+.size-info b { display:block; color:var(--ink); font-size:15px; line-height:1.5; }
+.size-after { background:#f0f3f8; }
+.size-after.is-complete { background:#eaf7f0; }
+.size-after.is-complete b { color:#197148; }
+.size-info em { align-self:center; color:var(--green); font-size:11px; font-style:normal; font-weight:700; }
 .loading-overlay { position:absolute; z-index:40; inset:58px 0 0; display:flex; align-items:center; justify-content:center; flex-direction:column; background:rgba(248,250,255,.95); backdrop-filter:blur(5px); }
 .spinner { width:44px; height:44px; margin-bottom:16px; border:4px solid #cfdaef; border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; }
 .loading-overlay strong { font-size:19px; }

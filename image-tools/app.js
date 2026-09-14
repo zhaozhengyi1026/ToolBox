@@ -470,21 +470,28 @@ function renderCompressionList() {
     dimensions.textContent = `${imageItem.width} × ${imageItem.height}`;
     identity.append(name, dimensions);
     const source = document.createElement("div");
-    source.className = "size-info";
-    source.append("源图片 ");
+    source.className = "size-info size-before";
+    const sourceLabel = document.createElement("span");
+    sourceLabel.textContent = "压缩前大小";
     const sourceSize = document.createElement("b");
     sourceSize.textContent = formatBytes(imageItem.file.size);
-    source.appendChild(sourceSize);
+    source.append(sourceLabel, sourceSize);
     const result = document.createElement("div");
-    result.className = "size-info";
+    result.className = `size-info size-after${imageItem.compression ? " is-complete" : ""}`;
+    const resultLabel = document.createElement("span");
+    resultLabel.textContent = "压缩后大小";
+    result.appendChild(resultLabel);
     if (imageItem.compression) {
-      result.append("压缩后 ");
       const resultSize = document.createElement("b");
       resultSize.textContent = formatBytes(imageItem.compression.size);
       const change = document.createElement("em");
       change.textContent = compressionChange(imageItem.file.size, imageItem.compression.size);
       result.append(resultSize, change);
-    } else result.textContent = "等待处理";
+    } else {
+      const pending = document.createElement("b");
+      pending.textContent = "等待压缩";
+      result.appendChild(pending);
+    }
     row.append(identity, source, result);
     fragment.appendChild(row);
   });
