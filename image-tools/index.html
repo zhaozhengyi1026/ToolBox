@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="在浏览器本地把多张图片自由组合成多份 PDF，或批量压缩图片。">
+    <meta name="theme-color" content="#315cde">
+    <title>图片工作台 · ToolBox</title>
+    <link rel="icon" href="/assets/toolbox-mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/image-tools/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
+    <script src="/image-tools/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#tool-entries">跳到图片工具</a>
+    <header class="site-header"><a class="brand" href="/" aria-label="返回 ToolBox 首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>ToolBox</span></a><a class="back-link" href="/">返回首页 <span aria-hidden="true">→</span></a></header>
+
+    <main>
+      <section class="tool-entries" id="tool-entries" aria-labelledby="entries-title">
+        <div class="entries-heading"><div><p class="panel-label">图片工作台</p><h1 id="entries-title">选择处理方式</h1></div><p><strong>本地批量处理</strong> · 图片不会上传，刷新页面后即清空。</p></div>
+        <div class="entry-grid">
+          <button class="entry-card pdf-entry" type="button" data-enter-mode="pdf"><span class="entry-index">IMAGE / PDF</span><span class="entry-symbol pdf-symbol" aria-hidden="true"><i></i><i></i><b>PDF</b></span><strong>图片转 PDF</strong><p>自由选择图片组成多份 PDF，每份都能改名和调整图片顺序。</p><span class="entry-action">进入转换工具 →</span></button>
+          <button class="entry-card compress-entry" type="button" data-enter-mode="compress"><span class="entry-index">IMAGE / SMALLER</span><span class="entry-symbol compress-symbol" aria-hidden="true"><i>8.4</i><b>→</b><i>2.1</i></span><strong>图片压缩</strong><p>批量减小图片体积，并清楚比较每张图片处理前后的大小。</p><span class="entry-action">进入压缩工具 →</span></button>
+        </div>
+      </section>
+
+      <section class="tool-shell" id="tool-shell" aria-labelledby="workbench-title" hidden>
+        <div class="window-bar"><button class="mode-back" id="mode-back" type="button">← 选择其他工具</button><h2 id="workbench-title">图片工具</h2><span class="local-state"><i></i> LOCAL</span></div>
+        <div class="upload-view" id="upload-view">
+          <label class="drop-zone" id="drop-zone" for="image-input"><span class="image-sheet" aria-hidden="true"><i></i><b>IMG</b></span><span class="upload-kicker" id="upload-kicker">图片转 PDF</span><span class="upload-title">选择或拖入多张图片</span><span class="upload-copy">支持 JPG、PNG、WebP；最多 50 张，每张最大 25MB，总计不超过 250MB</span><span class="button button-primary">选择图片</span></label>
+          <input id="image-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple hidden>
+          <input id="add-image-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple hidden>
+        </div>
+
+        <div class="workspace" id="workspace" hidden>
+          <div class="workspace-toolbar"><div><span class="mini-image">IMG</span><strong id="workspace-mode-title">图片转 PDF</strong><small id="workspace-file-count">0 张图片</small></div><div class="workspace-file-actions"><button class="text-button" id="add-images" type="button">＋ 继续上传</button><button class="text-button danger-button" id="clear-images" type="button">清空全部</button></div></div>
+          <section class="image-library" aria-labelledby="library-title">
+            <div class="library-heading"><div><h3 id="library-title">已上传图片</h3><p id="library-help">点击图片选择，可组合成 PDF。</p></div><div class="selection-actions" id="selection-actions"><button type="button" id="select-all">全选</button><button type="button" id="select-none">清空选择</button><strong id="selected-count">已选 0 张</strong></div></div>
+            <div class="image-grid" id="image-grid"></div>
+          </section>
+
+          <section class="task-panel" id="pdf-panel" hidden>
+            <div class="panel-heading"><div><p class="panel-label">PDF 组合</p><h3>一组图片生成一份 PDF</h3><p>同一张图片可以加入不同组合；组合内可调整顺序。</p></div><button class="button button-primary" id="create-group" type="button">用所选图片新建 PDF</button></div>
+            <div class="group-list" id="group-list"></div>
+            <div class="empty-result" id="group-empty"><strong>还没有 PDF 组合</strong><p>先在上方选择图片，再点击“用所选图片新建 PDF”。</p></div>
+            <div class="download-bar" id="pdf-download-bar" hidden><p>共 <strong id="group-count">0</strong> 份 PDF 等待生成</p><button class="button button-dark" id="download-all-pdfs" type="button">下载全部 PDF</button></div>
+          </section>
+
+          <section class="task-panel" id="compress-panel" hidden>
+            <div class="panel-heading"><div><p class="panel-label">压缩设置</p><h3>批量压缩为 JPG</h3><p>透明区域会变成白色；如果新文件更大，会保留原图。</p></div></div>
+            <div class="preset-grid" role="radiogroup" aria-label="图片压缩档位"><label><input type="radio" name="compress-preset" value="small"><span><b>更小体积</b><small>最长边 1600px · 质量 62%</small><em>适合快速发送</em></span></label><label class="is-selected"><input type="radio" name="compress-preset" value="balanced" checked><span><b>均衡</b><small>最长边 2400px · 质量 76%</small><em>推荐</em></span></label><label><input type="radio" name="compress-preset" value="clear"><span><b>更清晰</b><small>最长边 3840px · 质量 88%</small><em>适合查看细节</em></span></label></div>
+            <div class="compression-list" id="compression-list"></div>
+            <div class="download-bar"><p id="compress-summary">源图片共 0 KB</p><button class="button button-dark" id="compress-images" type="button">压缩全部图片</button></div>
+          </section>
+        </div>
+        <div class="loading-overlay" id="loading-overlay" hidden><span class="spinner" aria-hidden="true"></span><strong id="loading-title">正在读取图片</strong><small id="loading-detail">请不要关闭页面</small></div>
+      </section>
+    </main>
+
+    <footer><a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>ToolBox</span></a><p>所有图片处理均在本地浏览器中完成。</p></footer>
+    <div class="confirm-modal" id="confirm-modal" hidden><section class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message"><span class="confirm-icon" aria-hidden="true">!</span><h2 id="confirm-title">确认操作</h2><p id="confirm-message"></p><div class="confirm-actions"><button class="button button-secondary" id="confirm-cancel" type="button">取消</button><button class="button confirm-submit" id="confirm-submit" type="button">确认</button></div></section></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
