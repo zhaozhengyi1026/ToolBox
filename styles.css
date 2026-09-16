@@ -1241,3 +1241,228 @@ h1 span::after {
     transform: none;
   }
 }
+
+/* Compact home dashboard */
+.header-note {
+  display: flex;
+  margin: 0;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.home-tools {
+  width: min(1240px, calc(100% - 48px));
+  min-height: calc(100vh - 164px);
+  margin: 0 auto;
+  padding: 24px 0 42px;
+}
+
+.home-heading {
+  display: flex;
+  margin-bottom: 22px;
+  align-items: end;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.home-heading .section-label {
+  margin-bottom: 7px;
+  font-size: 12px;
+}
+
+.home-heading h1 {
+  margin: 0;
+  font-size: clamp(30px, 3vw, 42px);
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+}
+
+.home-heading > p {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.quick-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.quick-tool {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 188px;
+  padding: 18px 19px;
+  grid-template-rows: 48px 1fr;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--paper);
+  box-shadow: 0 7px 22px rgba(38, 54, 90, 0.055);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.quick-tool:hover {
+  transform: translateY(-3px);
+  border-color: #aebde7;
+  box-shadow: 0 13px 30px rgba(38, 54, 90, 0.11);
+}
+
+.quick-icon {
+  display: flex;
+  width: fit-content;
+  height: 40px;
+  padding: 0 10px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #c9d5f6;
+  border-radius: 9px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.quick-icon i,
+.quick-icon b {
+  font-style: normal;
+}
+
+.quick-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-self: end;
+}
+
+.quick-type {
+  margin-bottom: 2px;
+  color: #7b8497;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.quick-copy strong {
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.quick-copy small {
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-arrow {
+  position: absolute;
+  top: 20px;
+  right: 18px;
+  color: #8490aa;
+  font-size: 18px;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.quick-tool:hover .quick-arrow {
+  transform: translateX(3px);
+  color: var(--blue);
+}
+
+.pages-icon {
+  padding-right: 7px;
+}
+
+.pages-icon i {
+  display: grid;
+  width: 21px;
+  height: 27px;
+  place-items: center;
+  border: 1px solid #aebfe9;
+  border-radius: 3px;
+  background: white;
+}
+
+.pages-icon i + i {
+  margin-left: -11px;
+}
+
+.file-image-icon b,
+.file-image-icon i {
+  display: grid;
+  height: 28px;
+  padding: 0 6px;
+  place-items: center;
+  border-radius: 4px;
+  background: white;
+  font-size: 9px;
+}
+
+.shrink-icon i {
+  display: grid;
+  width: 29px;
+  height: 27px;
+  place-items: center;
+  border-radius: 4px;
+  background: white;
+}
+
+.image-quick .quick-icon {
+  border-color: #cfc8f2;
+  background: var(--violet-soft);
+  color: var(--violet-dark);
+}
+
+.mail-quick .quick-icon {
+  border-color: #b9ddd4;
+  background: #eaf8f4;
+  color: #167768;
+  font-size: 21px;
+}
+
+.acg-quick .quick-icon {
+  border-color: #ead0dd;
+  background: #fff0f6;
+  color: #a84e75;
+}
+
+.book-icon i {
+  display: grid;
+  width: 24px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 3px 6px 6px 3px;
+  background: white;
+}
+
+@media (max-width: 1050px) {
+  .quick-tool-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .site-header { grid-template-columns: 1fr auto; }
+  .header-note { display: none; }
+  .home-tools { width: min(100% - 32px, 1240px); padding-top: 18px; }
+  .home-heading { align-items: start; flex-direction: column; gap: 7px; }
+  .quick-tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .quick-tool { min-height: 170px; padding: 16px; }
+  .quick-copy small { white-space: normal; }
+}
+
+@media (max-width: 480px) {
+  .home-heading h1 { font-size: 30px; }
+  .quick-tool-grid { grid-template-columns: minmax(0, 1fr); }
+  .quick-tool { min-height: 142px; }
+}

@@ -149,7 +149,7 @@ async function destroyDocuments() {
   }));
 }
 
-function enterMode(mode) {
+function enterMode(mode, shouldScroll = true) {
   if (!MODE_COPY[mode]) return;
   state.mode = mode;
   elements.entries.hidden = true;
@@ -159,7 +159,7 @@ function enterMode(mode) {
   elements.workbenchTitle.textContent = MODE_COPY[mode].title;
   elements.uploadKicker.textContent = MODE_COPY[mode].kicker;
   elements.workspaceModeTitle.textContent = MODE_COPY[mode].title;
-  elements.shell.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (shouldScroll) elements.shell.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function returnToEntries() {
@@ -805,3 +805,6 @@ document.querySelectorAll('input[name="compress-preset"]').forEach((input) => in
 }));
 
 if (!librariesReady) window.setTimeout(() => notify("PDF 组件加载失败，请检查网络后刷新页面。", true), 300);
+
+const initialMode = new URLSearchParams(window.location.search).get("mode");
+if (MODE_COPY[initialMode]) enterMode(initialMode, false);

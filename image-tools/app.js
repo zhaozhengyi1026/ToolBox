@@ -117,7 +117,7 @@ async function prepareImage(file) {
   }
 }
 
-function enterMode(mode) {
+function enterMode(mode, shouldScroll = true) {
   if (!MODE_COPY[mode]) return;
   state.mode = mode;
   elements.entries.hidden = true;
@@ -127,7 +127,7 @@ function enterMode(mode) {
   elements.workbenchTitle.textContent = MODE_COPY[mode].title;
   elements.uploadKicker.textContent = MODE_COPY[mode].kicker;
   elements.workspaceModeTitle.textContent = MODE_COPY[mode].title;
-  elements.shell.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (shouldScroll) elements.shell.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function releaseImages() {
@@ -284,7 +284,9 @@ function createGroup() {
   const ids = selectedIds();
   if (!ids.length) { notify("请先选择至少一张图片。", true); return; }
   if (state.groups.length >= LIMITS.maxGroups) { notify(`最多创建 ${LIMITS.maxGroups} 份 PDF。`, true); return; }
-  state.groups.push({ id: uniqueId(), name: `图片文档-${state.groups.length + 1}`, imageIds: ids });
+  const firstImage = imageById(ids[0]);
+  const originalName = firstImage ? baseName(firstImage.file.name) : `图片文档-${state.groups.length + 1}`;
+  state.groups.push({ id: uniqueId(), name: originalName, imageIds: ids });
   state.selected.clear();
   renderImageGrid();
   renderGroups();
@@ -394,6 +396,57 @@ async function canvasJpeg(imageItem, maxEdge, quality) {
   return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("图片编码失败")), "image/jpeg", quality));
 }
 
+async function jpegOrientation(file) {
+  try {
+    const view = new DataView(await file.slice(0, 128 * 1024).arrayBuffer());
+    if (view.byteLength < 4 || view.getUint16(0, false) !== 0xffd8) return 1;
+    let offset = 2;
+    while (offset + 4 <= view.byteLength) {
+      if (view.getUint8(offset) !== 0xff) break;
+      const marker = view.getUint8(offset + 1);
+      const length = view.getUint16(offset + 2, false);
+      if (marker === 0xe1 && offset + 10 <= view.byteLength && view.getUint32(offset + 4, false) === 0x45786966) {
+        const tiff = offset + 10;
+        const littleEndian = view.getUint16(tiff, false) === 0x4949;
+        const firstIfd = tiff + view.getUint32(tiff + 4, littleEndian);
+        if (firstIfd + 2 > view.byteLength) return 1;
+        const entries = view.getUint16(firstIfd, littleEndian);
+        for (let index = 0; index < entries; index += 1) {
+          const entry = firstIfd + 2 + index * 12;
+          if (entry + 12 > view.byteLength) break;
+          if (view.getUint16(entry, littleEndian) === 0x0112) return view.getUint16(entry + 8, littleEndian) || 1;
+        }
+        return 1;
+      }
+      if (length < 2) break;
+      offset += 2 + length;
+    }
+  } catch (error) {
+    console.warn("无法读取图片方向信息，将按原始方向处理", file.name, error);
+  }
+  return 1;
+}
+
+async function canvasPng(imageItem) {
+  const image = await loadImageElement(imageItem.url);
+  const canvas = document.createElement("canvas");
+  canvas.width = imageItem.width;
+  canvas.height = imageItem.height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("浏览器无法创建图片画布");
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("图片方向校正失败")), "image/png"));
+}
+
+async function embedOriginalAppearance(pdf, imageItem) {
+  const isJpeg = /^(?:image\/jpeg)$/i.test(imageItem.file.type) || /\.jpe?g$/i.test(imageItem.file.name);
+  const isPng = /^(?:image\/png)$/i.test(imageItem.file.type) || /\.png$/i.test(imageItem.file.name);
+  if (isPng) return pdf.embedPng(await imageItem.file.arrayBuffer());
+  if (isJpeg && await jpegOrientation(imageItem.file) === 1) return pdf.embedJpg(await imageItem.file.arrayBuffer());
+  // PDF 不识别手机照片的 EXIF 旋转和 WebP；以无损 PNG 固化浏览器中看到的方向与画面。
+  return pdf.embedPng(await (await canvasPng(imageItem)).arrayBuffer());
+}
+
 async function createPdfBlob(group) {
   if (!window.PDFLib) throw new Error("PDF 组件加载失败，请检查网络后刷新页面。");
   const pdf = await PDFLib.PDFDocument.create();
@@ -401,19 +454,12 @@ async function createPdfBlob(group) {
     const imageItem = imageById(group.imageIds[index]);
     if (!imageItem) continue;
     elements.loadingDetail.textContent = `${group.name} · 第 ${index + 1} / ${group.imageIds.length} 张`;
-    let embedded;
-    if (/^(?:image\/jpeg)$/i.test(imageItem.file.type) || /\.jpe?g$/i.test(imageItem.file.name)) embedded = await pdf.embedJpg(await imageItem.file.arrayBuffer());
-    else if (/^(?:image\/png)$/i.test(imageItem.file.type) || /\.png$/i.test(imageItem.file.name)) embedded = await pdf.embedPng(await imageItem.file.arrayBuffer());
-    else embedded = await pdf.embedJpg(await (await canvasJpeg(imageItem, 6000, .94)).arrayBuffer());
-    const landscape = imageItem.width > imageItem.height;
-    const pageWidth = landscape ? 841.89 : 595.28;
-    const pageHeight = landscape ? 595.28 : 841.89;
-    const margin = 24;
-    const scale = Math.min((pageWidth - margin * 2) / embedded.width, (pageHeight - margin * 2) / embedded.height);
-    const width = embedded.width * scale;
-    const height = embedded.height * scale;
+    const embedded = await embedOriginalAppearance(pdf, imageItem);
+    const scale = Math.min(1, 841.89 / Math.max(embedded.width, embedded.height));
+    const pageWidth = embedded.width * scale;
+    const pageHeight = embedded.height * scale;
     const page = pdf.addPage([pageWidth, pageHeight]);
-    page.drawImage(embedded, { x: (pageWidth - width) / 2, y: (pageHeight - height) / 2, width, height });
+    page.drawImage(embedded, { x: 0, y: 0, width: pageWidth, height: pageHeight });
   }
   if (!pdf.getPageCount()) throw new Error("PDF 组合中没有可用图片。");
   return new Blob([await pdf.save({ useObjectStreams: true })], { type: "application/pdf" });
@@ -572,3 +618,6 @@ document.querySelectorAll('input[name="compress-preset"]').forEach((input) => in
 }));
 
 if (!window.PDFLib || !window.JSZip) window.setTimeout(() => notify("处理组件加载失败，请检查网络后刷新页面。", true), 300);
+
+const initialMode = new URLSearchParams(window.location.search).get("mode");
+if (MODE_COPY[initialMode]) enterMode(initialMode, false);
