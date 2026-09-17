@@ -6,7 +6,7 @@ const MODE_COPY = Object.freeze({ pdf: { title: "图片转 PDF", kicker: "IMAGE 
 const state = { mode: null, images: [], groups: [], selected: new Set(), busy: false };
 const $ = (selector) => document.querySelector(selector);
 const elements = {
-  entries: $("#tool-entries"), shell: $("#tool-shell"), modeBack: $("#mode-back"), workbenchTitle: $("#workbench-title"), uploadKicker: $("#upload-kicker"), uploadView: $("#upload-view"), input: $("#image-input"), addInput: $("#add-image-input"), dropZone: $("#drop-zone"), workspace: $("#workspace"), workspaceModeTitle: $("#workspace-mode-title"), workspaceFileCount: $("#workspace-file-count"), addImages: $("#add-images"), clearImages: $("#clear-images"), libraryHelp: $("#library-help"), selectionActions: $("#selection-actions"), selectAll: $("#select-all"), selectNone: $("#select-none"), selectedCount: $("#selected-count"), imageGrid: $("#image-grid"),
+  shell: $("#tool-shell"), workbenchTitle: $("#workbench-title"), uploadKicker: $("#upload-kicker"), uploadView: $("#upload-view"), input: $("#image-input"), addInput: $("#add-image-input"), dropZone: $("#drop-zone"), workspace: $("#workspace"), workspaceModeTitle: $("#workspace-mode-title"), workspaceFileCount: $("#workspace-file-count"), addImages: $("#add-images"), clearImages: $("#clear-images"), libraryHelp: $("#library-help"), selectionActions: $("#selection-actions"), selectAll: $("#select-all"), selectNone: $("#select-none"), selectedCount: $("#selected-count"), imageGrid: $("#image-grid"),
   pdfPanel: $("#pdf-panel"), createGroup: $("#create-group"), groupList: $("#group-list"), groupEmpty: $("#group-empty"), pdfDownloadBar: $("#pdf-download-bar"), groupCount: $("#group-count"), downloadAllPdfs: $("#download-all-pdfs"),
   compressPanel: $("#compress-panel"), compressionList: $("#compression-list"), compressSummary: $("#compress-summary"), compressImages: $("#compress-images"), overlay: $("#loading-overlay"), loadingTitle: $("#loading-title"), loadingDetail: $("#loading-detail"), toast: $("#toast"), confirmModal: $("#confirm-modal"), confirmTitle: $("#confirm-title"), confirmMessage: $("#confirm-message"), confirmCancel: $("#confirm-cancel"), confirmSubmit: $("#confirm-submit")
 };
@@ -117,17 +117,16 @@ async function prepareImage(file) {
   }
 }
 
-function enterMode(mode, shouldScroll = true) {
+function enterMode(mode) {
   if (!MODE_COPY[mode]) return;
   state.mode = mode;
-  elements.entries.hidden = true;
   elements.shell.hidden = false;
   elements.uploadView.hidden = false;
   elements.workspace.hidden = true;
   elements.workbenchTitle.textContent = MODE_COPY[mode].title;
   elements.uploadKicker.textContent = MODE_COPY[mode].kicker;
   elements.workspaceModeTitle.textContent = MODE_COPY[mode].title;
-  if (shouldScroll) elements.shell.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.title = `${MODE_COPY[mode].title} · ToolBox`;
 }
 
 function releaseImages() {
@@ -146,15 +145,6 @@ function resetUpload() {
   elements.workspaceFileCount.textContent = "0 张图片";
   elements.workspace.hidden = true;
   elements.uploadView.hidden = false;
-}
-
-function returnToEntries() {
-  if (state.busy) return;
-  resetUpload();
-  state.mode = null;
-  elements.shell.hidden = true;
-  elements.entries.hidden = false;
-  elements.entries.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function loadFiles(fileList, append = false) {
@@ -593,8 +583,6 @@ async function compressAll() {
   finally { setBusy(false); renderCompressionList(); }
 }
 
-document.querySelectorAll("[data-enter-mode]").forEach((control) => control.addEventListener("click", () => enterMode(control.dataset.enterMode)));
-elements.modeBack.addEventListener("click", returnToEntries);
 elements.addImages.addEventListener("click", () => elements.addInput.click());
 elements.clearImages.addEventListener("click", async () => {
   if (!await askConfirmation("清空全部图片", "所有图片、PDF 组合和压缩结果都会清除。", "清空全部")) return;
@@ -620,4 +608,5 @@ document.querySelectorAll('input[name="compress-preset"]').forEach((input) => in
 if (!window.PDFLib || !window.JSZip) window.setTimeout(() => notify("处理组件加载失败，请检查网络后刷新页面。", true), 300);
 
 const initialMode = new URLSearchParams(window.location.search).get("mode");
-if (MODE_COPY[initialMode]) enterMode(initialMode, false);
+if (MODE_COPY[initialMode]) enterMode(initialMode);
+else window.location.replace("/");

@@ -5,43 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="在浏览器本地批量拆分、压缩 PDF，或把指定 PDF 页面转换成图片。">
     <meta name="theme-color" content="#315cde">
-    <title>PDF 工具 · ToolBox</title>
+    <title>PDF 处理 · ToolBox</title>
     <link rel="icon" href="/assets/toolbox-mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/pdf-tools/style.css">
+    <link rel="stylesheet" href="/assets/tool-nav.css">
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
     <script src="/pdf-tools/app.js" defer></script>
+    <script src="/assets/tool-nav.js" defer></script>
   </head>
-  <body>
-    <a class="skip-link" href="#tool-entries">跳到 PDF 工具</a>
+  <body class="has-tool-nav">
+    <a class="skip-link" href="#tool-shell">跳到 PDF 工具</a>
     <header class="site-header">
       <a class="brand" href="/" aria-label="返回 ToolBox 首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>ToolBox</span></a>
       <a class="back-link" href="/">返回首页 <span aria-hidden="true">→</span></a>
     </header>
 
     <main>
-      <section class="tool-entries" id="tool-entries" aria-labelledby="entries-title">
-        <div class="entries-heading"><div><p class="panel-label">PDF 工作台</p><h1 id="entries-title">选择处理方式</h1></div><p><strong>本地批量处理</strong> · 文件不会上传，刷新页面后即清空。</p></div>
-        <div class="entry-grid">
-          <button class="entry-card split-entry" type="button" data-enter-mode="split">
-            <span class="entry-index">PDF / PDF</span><span class="entry-symbol" aria-hidden="true"><i>1</i><i>2</i><i>3</i></span>
-            <strong>拆分 PDF</strong><p>按单页拆开，或自由组合指定页码；下载前可以逐份重命名。</p><span class="entry-action">进入拆分工具 →</span>
-          </button>
-          <button class="entry-card image-entry" type="button" data-enter-mode="image">
-            <span class="entry-index">PDF / PNG / JPG</span><span class="entry-symbol image-symbol" aria-hidden="true"><i></i><i></i><i></i></span>
-            <strong>PDF 转图片</strong><p>为每份 PDF 勾选需要的页面，再批量导出 PNG 或 JPG。</p><span class="entry-action">进入转图片工具 →</span>
-          </button>
-          <button class="entry-card compress-entry" type="button" data-enter-mode="compress">
-            <span class="entry-index">PDF / SMALLER</span><span class="entry-symbol compress-symbol" aria-hidden="true"><i>8.4</i><b>→</b><i>2.1</i></span>
-            <strong>压缩 PDF</strong><p>清楚比较压缩前后的文件大小，多份文档可以一次完成。</p><span class="entry-action">进入压缩工具 →</span>
-          </button>
-        </div>
-      </section>
-
       <section class="tool-shell" id="tool-shell" aria-labelledby="workbench-title" hidden>
         <div class="window-bar">
-          <button class="mode-back" id="mode-back" type="button">← 选择其他工具</button>
+          <a class="mode-back" href="/">← 选择其他工具</a>
           <h2 id="workbench-title">PDF 工具</h2>
           <span class="local-state"><i></i> LOCAL</span>
         </div>

@@ -6,7 +6,7 @@ const MODE_COPY = Object.freeze({ split: { title: "拆分 PDF", kicker: "PDF SPL
 const state = { mode: null, documents: [], currentIndex: 0, busy: false, drag: null, ignoreNextClick: false };
 const $ = (selector) => document.querySelector(selector);
 const elements = {
-  entries: $("#tool-entries"), shell: $("#tool-shell"), modeBack: $("#mode-back"), workbenchTitle: $("#workbench-title"), uploadKicker: $("#upload-kicker"), uploadView: $("#upload-view"), input: $("#pdf-input"), addInput: $("#add-pdf-input"), dropZone: $("#drop-zone"), workspace: $("#workspace"), workspaceModeTitle: $("#workspace-mode-title"), workspaceFileCount: $("#workspace-file-count"), addPdfs: $("#add-pdfs"), clearPdfs: $("#clear-pdfs"), fileList: $("#file-list"), fileCount: $("#file-count"),
+  shell: $("#tool-shell"), workbenchTitle: $("#workbench-title"), uploadKicker: $("#upload-kicker"), uploadView: $("#upload-view"), input: $("#pdf-input"), addInput: $("#add-pdf-input"), dropZone: $("#drop-zone"), workspace: $("#workspace"), workspaceModeTitle: $("#workspace-mode-title"), workspaceFileCount: $("#workspace-file-count"), addPdfs: $("#add-pdfs"), clearPdfs: $("#clear-pdfs"), fileList: $("#file-list"), fileCount: $("#file-count"),
   pageWorkspace: $("#page-workspace"), fileName: $("#file-name"), fileMeta: $("#file-meta"), pageWindowLabel: $("#page-window-label"), pageInput: $("#selected-pages"), selectedCount: $("#selected-count"), pageGrid: $("#page-grid"), previousSet: $("#previous-page-set"), nextSet: $("#next-page-set"), paginationLabel: $("#pagination-label"),
   splitPanel: $("#split-panel"), addSplit: $("#add-split"), splitSingle: $("#split-single"), splitList: $("#split-list"), splitEmpty: $("#split-empty"), splitBar: $("#split-download-bar"), splitCount: $("#split-count"), downloadPdfs: $("#download-all-pdfs"),
   imagePanel: $("#image-panel"), imageFormat: $("#image-format"), imageScale: $("#image-scale"), imageTitle: $("#image-selection-title"), imageCopy: $("#image-selection-copy"), downloadImages: $("#download-images"),
@@ -149,28 +149,16 @@ async function destroyDocuments() {
   }));
 }
 
-function enterMode(mode, shouldScroll = true) {
+function enterMode(mode) {
   if (!MODE_COPY[mode]) return;
   state.mode = mode;
-  elements.entries.hidden = true;
   elements.shell.hidden = false;
   elements.uploadView.hidden = false;
   elements.workspace.hidden = true;
   elements.workbenchTitle.textContent = MODE_COPY[mode].title;
   elements.uploadKicker.textContent = MODE_COPY[mode].kicker;
   elements.workspaceModeTitle.textContent = MODE_COPY[mode].title;
-  if (shouldScroll) elements.shell.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-async function returnToEntries() {
-  if (state.busy) return;
-  await destroyDocuments();
-  state.mode = null;
-  elements.input.value = "";
-  elements.addInput.value = "";
-  elements.shell.hidden = true;
-  elements.entries.hidden = false;
-  elements.entries.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.title = `${MODE_COPY[mode].title} · ToolBox`;
 }
 
 async function resetUpload() {
@@ -760,8 +748,6 @@ async function compressAll() {
   finally { setBusy(false); renderCompressionList(); }
 }
 
-document.querySelectorAll("[data-enter-mode]").forEach((button) => button.addEventListener("click", () => enterMode(button.dataset.enterMode)));
-elements.modeBack.addEventListener("click", returnToEntries);
 elements.addPdfs.addEventListener("click", () => elements.addInput.click());
 elements.clearPdfs.addEventListener("click", async () => {
   if (!await askConfirmation("清空全部 PDF", "所有 PDF、选页、拆分项和处理结果都会清除。", "清空全部")) return;
@@ -807,4 +793,5 @@ document.querySelectorAll('input[name="compress-preset"]').forEach((input) => in
 if (!librariesReady) window.setTimeout(() => notify("PDF 组件加载失败，请检查网络后刷新页面。", true), 300);
 
 const initialMode = new URLSearchParams(window.location.search).get("mode");
-if (MODE_COPY[initialMode]) enterMode(initialMode, false);
+if (MODE_COPY[initialMode]) enterMode(initialMode);
+else window.location.replace("/");
