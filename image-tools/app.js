@@ -3,7 +3,7 @@
 const LIMITS = Object.freeze({ maxFiles: 50, maxFileBytes: 25 * 1024 * 1024, maxTotalBytes: 250 * 1024 * 1024, maxPixels: 40_000_000, maxGroups: 100, maxGroupImages: 200 });
 const PRESETS = Object.freeze({ small: { maxEdge: 1600, quality: .62 }, balanced: { maxEdge: 2400, quality: .76 }, clear: { maxEdge: 3840, quality: .88 } });
 const MODE_COPY = Object.freeze({ pdf: { title: "图片转 PDF", kicker: "IMAGE TO PDF" }, compress: { title: "图片压缩", kicker: "IMAGE COMPRESS" } });
-const state = { mode: null, images: [], groups: [], selected: new Set(), busy: false };
+const state = { mode: null, images: [], groups: [], selected: new Set(), busy: false, groupDrag: null };
 const $ = (selector) => document.querySelector(selector);
 const elements = {
   shell: $("#tool-shell"), workbenchTitle: $("#workbench-title"), uploadKicker: $("#upload-kicker"), uploadView: $("#upload-view"), input: $("#image-input"), addInput: $("#add-image-input"), dropZone: $("#drop-zone"), workspace: $("#workspace"), workspaceModeTitle: $("#workspace-mode-title"), workspaceFileCount: $("#workspace-file-count"), addImages: $("#add-images"), clearImages: $("#clear-images"), libraryHelp: $("#library-help"), selectionActions: $("#selection-actions"), selectAll: $("#select-all"), selectNone: $("#select-none"), selectedCount: $("#selected-count"), imageGrid: $("#image-grid"),
@@ -294,8 +294,7 @@ function addSelectedToGroup(group) {
   notify(`已加入 ${additions.length} 张图片`);
 }
 
-function moveGroupImage(group, index, offset) {
-  const target = index + offset;
+function moveGroupImageTo(group, index, target) {
   if (target < 0 || target >= group.imageIds.length) return;
   [group.imageIds[index], group.imageIds[target]] = [group.imageIds[target], group.imageIds[index]];
   renderGroups();
@@ -344,9 +343,35 @@ function renderGroups() {
       title.textContent = `${index + 1}. ${imageItem.file.name}`;
       const controls = document.createElement("span");
       controls.className = "order-actions";
-      controls.append(button("↑", () => moveGroupImage(group, index, -1), "", "上移"), button("↓", () => moveGroupImage(group, index, 1), "", "下移"), button("×", () => { group.imageIds.splice(index, 1); if (!group.imageIds.length) state.groups = state.groups.filter((entry) => entry !== group); renderGroups(); }, "", "从组合移除"));
+      const handle = button("⠿", () => {}, "order-drag-handle", `拖动调整 ${imageItem.file.name} 的顺序`);
+      handle.draggable = true;
+      const remove = button("×", () => { group.imageIds.splice(index, 1); if (!group.imageIds.length) state.groups = state.groups.filter((entry) => entry !== group); renderGroups(); }, "", "从组合移除");
+      controls.append(handle, remove);
       copy.append(title, controls);
       item.append(image, copy);
+      handle.addEventListener("dragstart", (event) => {
+        state.groupDrag = { group, index };
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", String(index));
+        item.classList.add("is-dragging");
+      });
+      item.addEventListener("dragover", (event) => {
+        if (!state.groupDrag || state.groupDrag.group !== group || state.groupDrag.index === index) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        item.classList.add("is-drag-over");
+      });
+      item.addEventListener("dragleave", () => item.classList.remove("is-drag-over"));
+      item.addEventListener("drop", (event) => {
+        event.preventDefault();
+        const drag = state.groupDrag;
+        clearGroupDragState();
+        if (!drag || drag.group !== group) return;
+        const target = index + (event.clientX > item.getBoundingClientRect().left + item.offsetWidth / 2 ? 1 : 0);
+        if (drag.index === target || drag.index + 1 === target) return;
+        moveGroupImageTo(group, drag.index, drag.index < target ? target - 1 : target);
+      });
+      item.addEventListener("dragend", clearGroupDragState);
       images.appendChild(item);
     });
     article.append(top, images);
@@ -357,6 +382,11 @@ function renderGroups() {
   elements.pdfDownloadBar.hidden = state.groups.length === 0;
   elements.groupCount.textContent = String(state.groups.length);
   elements.downloadAllPdfs.textContent = state.groups.length > 1 ? "打包下载全部 PDF" : "下载 PDF";
+}
+
+function clearGroupDragState() {
+  state.groupDrag = null;
+  elements.groupList.querySelectorAll(".is-dragging, .is-drag-over").forEach((item) => item.classList.remove("is-dragging", "is-drag-over"));
 }
 
 function button(text, onClick, extraClass = "", ariaLabel = "") {

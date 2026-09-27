@@ -3,7 +3,7 @@
 const LIMITS = Object.freeze({ maxFiles: 20, maxFileBytes: 100 * 1024 * 1024, maxTotalBytes: 300 * 1024 * 1024, maxPages: 500, pagesPerView: 15, maxSplitItems: 500, maxCanvasPixels: 40_000_000 });
 const PRESETS = Object.freeze({ small: { scale: 1.2, quality: .52 }, balanced: { scale: 1.5, quality: .68 }, clear: { scale: 2, quality: .82 } });
 const MODE_COPY = Object.freeze({ merge: { title: "合并 PDF", kicker: "PDF MERGE" }, split: { title: "拆分 PDF", kicker: "PDF SPLIT" }, image: { title: "PDF 转图片", kicker: "PDF TO IMAGE" }, compress: { title: "压缩 PDF", kicker: "PDF COMPRESS" } });
-const state = { mode: null, documents: [], currentIndex: 0, busy: false, drag: null, ignoreNextClick: false };
+const state = { mode: null, documents: [], currentIndex: 0, busy: false, drag: null, mergeDragIndex: null, ignoreNextClick: false };
 const $ = (selector) => document.querySelector(selector);
 const elements = {
   shell: $("#tool-shell"), workbenchTitle: $("#workbench-title"), uploadKicker: $("#upload-kicker"), uploadView: $("#upload-view"), input: $("#pdf-input"), addInput: $("#add-pdf-input"), dropZone: $("#drop-zone"), workspace: $("#workspace"), workspaceModeTitle: $("#workspace-mode-title"), workspaceFileCount: $("#workspace-file-count"), addPdfs: $("#add-pdfs"), clearPdfs: $("#clear-pdfs"), fileList: $("#file-list"), fileCount: $("#file-count"),
@@ -548,7 +548,7 @@ function renderMergeList() {
   let totalPages = 0;
   state.documents.forEach((pdfDocument, index) => {
     const row = documentElement("div", "merge-item");
-    row.innerHTML = `<div class="merge-item-order">${String(index + 1).padStart(2, "0")}</div><div class="merge-item-copy"><strong></strong><small></small></div><label class="field"><span>保留页码 / 顺序</span><input class="merge-pages-input" type="text" inputmode="numeric" placeholder="例如：1-3, 6"></label><div class="merge-item-actions"><button class="item-button move-up" type="button" aria-label="上移文件">↑</button><button class="item-button move-down" type="button" aria-label="下移文件">↓</button></div>`;
+    row.innerHTML = `<button class="merge-drag-handle" type="button" draggable="true" aria-label="拖动调整 ${pdfDocument.file.name} 的顺序" title="拖动调整顺序">⠿</button><div class="merge-item-order">${String(index + 1).padStart(2, "0")}</div><div class="merge-item-copy"><strong></strong><small></small></div><label class="field"><span>保留页码 / 顺序</span><input class="merge-pages-input" type="text" inputmode="numeric" placeholder="例如：1-3, 6"></label>`;
     row.querySelector("strong").textContent = pdfDocument.file.name;
     row.querySelector("small").textContent = `${pdfDocument.pageCount} 页 · ${formatBytes(pdfDocument.file.size)}`;
     const pagesInput = row.querySelector(".merge-pages-input");
@@ -556,15 +556,39 @@ function renderMergeList() {
     try { totalPages += parseOrderedPageRange(pdfDocument.mergePages, pdfDocument.pageCount).length; } catch { pagesInput.setAttribute("aria-invalid", "true"); }
     pagesInput.addEventListener("input", (event) => { pdfDocument.mergePages = event.target.value; pagesInput.removeAttribute("aria-invalid"); renderMergeSummary(); });
     pagesInput.addEventListener("blur", () => { try { parseOrderedPageRange(pdfDocument.mergePages, pdfDocument.pageCount); } catch (error) { pagesInput.setAttribute("aria-invalid", "true"); notify(error.message, true); } });
-    row.querySelector(".move-up").disabled = index === 0;
-    row.querySelector(".move-down").disabled = index === state.documents.length - 1;
-    row.querySelector(".move-up").addEventListener("click", () => moveMergeDocument(index, -1));
-    row.querySelector(".move-down").addEventListener("click", () => moveMergeDocument(index, 1));
+    const handle = row.querySelector(".merge-drag-handle");
+    handle.addEventListener("dragstart", (event) => {
+      state.mergeDragIndex = index;
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", String(index));
+      row.classList.add("is-dragging");
+    });
+    row.addEventListener("dragover", (event) => {
+      if (state.mergeDragIndex === null || state.mergeDragIndex === index) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      row.classList.add("is-drag-over");
+    });
+    row.addEventListener("dragleave", () => row.classList.remove("is-drag-over"));
+    row.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const fromIndex = state.mergeDragIndex;
+      const targetIndex = index + (event.clientY > row.getBoundingClientRect().top + row.offsetHeight / 2 ? 1 : 0);
+      clearMergeDragState();
+      if (fromIndex === null || fromIndex === targetIndex || fromIndex + 1 === targetIndex) return;
+      moveMergeDocumentTo(fromIndex, fromIndex < targetIndex ? targetIndex - 1 : targetIndex);
+    });
+    row.addEventListener("dragend", clearMergeDragState);
     elements.mergeList.appendChild(row);
   });
   elements.mergeEmpty.hidden = state.documents.length > 0;
   elements.mergePdf.disabled = !state.documents.length;
   elements.mergePageCount.textContent = `${totalPages} 页`;
+}
+
+function clearMergeDragState() {
+  state.mergeDragIndex = null;
+  elements.mergeList.querySelectorAll(".is-dragging, .is-drag-over").forEach((row) => row.classList.remove("is-dragging", "is-drag-over"));
 }
 
 function renderMergeSummary() {
@@ -574,8 +598,7 @@ function renderMergeSummary() {
   elements.mergePageCount.textContent = `${total} 页`;
 }
 
-function moveMergeDocument(index, offset) {
-  const target = index + offset;
+function moveMergeDocumentTo(index, target) {
   if (target < 0 || target >= state.documents.length) return;
   [state.documents[index], state.documents[target]] = [state.documents[target], state.documents[index]];
   state.currentIndex = Math.min(state.currentIndex, state.documents.length - 1);

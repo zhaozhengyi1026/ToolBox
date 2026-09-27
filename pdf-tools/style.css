@@ -172,7 +172,12 @@ h1 em::after { position: absolute; right: 0; bottom: -8px; left: 2px; height: 8p
 .merge-summary { display: flex; align-items: baseline; gap: 8px; color: var(--muted); white-space: nowrap; }
 .merge-summary strong { color: var(--blue); font-size: 24px; }
 .merge-list { display: grid; gap: 10px; }
-.merge-item { display: grid; min-height: 78px; padding: 11px 13px; grid-template-columns: 38px minmax(170px, 1fr) minmax(220px, 1.1fr) auto; align-items: center; gap: 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcff; }
+.merge-item { display: grid; min-height: 78px; padding: 11px 13px; grid-template-columns: 28px 38px minmax(170px, 1fr) minmax(220px, 1.1fr); align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcff; transition: border-color .16s, background .16s, opacity .16s, transform .16s; }
+.merge-drag-handle { display: grid; width: 28px; height: 34px; padding: 0; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #8d99af; cursor: grab; font-size: 22px; letter-spacing: -4px; }
+.merge-drag-handle:hover, .merge-drag-handle:focus-visible { background: var(--blue-soft); color: var(--blue); outline: none; }
+.merge-drag-handle:active { cursor: grabbing; }
+.merge-item.is-dragging { opacity: .45; }
+.merge-item.is-drag-over { border-color: var(--blue); background: #f1f5ff; transform: translateY(2px); }
 .merge-item-order { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 9px; background: var(--blue-soft); color: var(--blue); font-size: 12px; font-weight: 800; }
 .merge-item-copy { min-width: 0; }
 .merge-item-copy strong, .merge-item-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -307,9 +312,8 @@ footer p { margin: 0; }
   .panel-actions { display: grid; }
   .merge-settings { align-items: stretch; flex-direction: column; }
   .merge-settings > .field { width: 100%; }
-  .merge-item { grid-template-columns: 38px minmax(0, 1fr) auto; }
+  .merge-item { grid-template-columns: 28px 38px minmax(0, 1fr); gap: 10px; }
   .merge-item .field { grid-column: 2/-1; }
-  .merge-item-actions { grid-column: 3; grid-row: 1; }
   .split-item { grid-template-columns: 1fr 1fr; }
   .split-item .field { grid-column: 1/-1; }
   .image-options { flex-wrap: wrap; }
