@@ -2,13 +2,14 @@
 
 const LIMITS = Object.freeze({ maxFiles: 20, maxFileBytes: 100 * 1024 * 1024, maxTotalBytes: 300 * 1024 * 1024, maxPages: 500, pagesPerView: 15, maxSplitItems: 500, maxCanvasPixels: 40_000_000 });
 const PRESETS = Object.freeze({ small: { scale: 1.2, quality: .52 }, balanced: { scale: 1.5, quality: .68 }, clear: { scale: 2, quality: .82 } });
-const MODE_COPY = Object.freeze({ split: { title: "拆分 PDF", kicker: "PDF SPLIT" }, image: { title: "PDF 转图片", kicker: "PDF TO IMAGE" }, compress: { title: "压缩 PDF", kicker: "PDF COMPRESS" } });
+const MODE_COPY = Object.freeze({ merge: { title: "合并 PDF", kicker: "PDF MERGE" }, split: { title: "拆分 PDF", kicker: "PDF SPLIT" }, image: { title: "PDF 转图片", kicker: "PDF TO IMAGE" }, compress: { title: "压缩 PDF", kicker: "PDF COMPRESS" } });
 const state = { mode: null, documents: [], currentIndex: 0, busy: false, drag: null, ignoreNextClick: false };
 const $ = (selector) => document.querySelector(selector);
 const elements = {
   shell: $("#tool-shell"), workbenchTitle: $("#workbench-title"), uploadKicker: $("#upload-kicker"), uploadView: $("#upload-view"), input: $("#pdf-input"), addInput: $("#add-pdf-input"), dropZone: $("#drop-zone"), workspace: $("#workspace"), workspaceModeTitle: $("#workspace-mode-title"), workspaceFileCount: $("#workspace-file-count"), addPdfs: $("#add-pdfs"), clearPdfs: $("#clear-pdfs"), fileList: $("#file-list"), fileCount: $("#file-count"),
   pageWorkspace: $("#page-workspace"), fileName: $("#file-name"), fileMeta: $("#file-meta"), pageWindowLabel: $("#page-window-label"), pageInput: $("#selected-pages"), selectedCount: $("#selected-count"), pageGrid: $("#page-grid"), previousSet: $("#previous-page-set"), nextSet: $("#next-page-set"), paginationLabel: $("#pagination-label"),
   splitPanel: $("#split-panel"), addSplit: $("#add-split"), splitSingle: $("#split-single"), splitList: $("#split-list"), splitEmpty: $("#split-empty"), splitBar: $("#split-download-bar"), splitCount: $("#split-count"), downloadPdfs: $("#download-all-pdfs"),
+  mergePanel: $("#merge-panel"), mergeList: $("#merge-list"), mergeEmpty: $("#merge-empty"), mergeName: $("#merge-name"), mergePageCount: $("#merge-page-count"), mergePdf: $("#merge-pdf"),
   imagePanel: $("#image-panel"), imageFormat: $("#image-format"), imageScale: $("#image-scale"), imageTitle: $("#image-selection-title"), imageCopy: $("#image-selection-copy"), downloadImages: $("#download-images"),
   compressPanel: $("#compress-panel"), compressionList: $("#compression-list"), compressSummary: $("#compress-summary"), compressPdf: $("#compress-pdf"), overlay: $("#loading-overlay"), loadingTitle: $("#loading-title"), loadingDetail: $("#loading-detail"), toast: $("#toast"), confirmModal: $("#confirm-modal"), confirmTitle: $("#confirm-title"), confirmMessage: $("#confirm-message"), confirmCancel: $("#confirm-cancel"), confirmSubmit: $("#confirm-submit")
 };
@@ -189,7 +190,7 @@ async function loadPdfFile(file) {
   return {
     id: documentId(), file, bytes, pdf, pageCount: pdf.numPages,
     baseName: safeName(file.name.replace(/\.pdf$/i, "")),
-    selected: new Set(Array.from({ length: pdf.numPages }, (_, index) => index + 1)),
+    selected: new Set(Array.from({ length: pdf.numPages }, (_, index) => index + 1)), mergePages: compactPages(Array.from({ length: pdf.numPages }, (_, index) => index + 1)),
     previewPage: 1, splitItems: [], compression: null
   };
 }
@@ -256,15 +257,18 @@ function renderWorkspace() {
   elements.fileCount.textContent = String(count);
   elements.pageWorkspace.hidden = state.mode === "compress";
   elements.splitPanel.hidden = state.mode !== "split";
+  elements.mergePanel.hidden = state.mode !== "merge";
   elements.imagePanel.hidden = state.mode !== "image";
   elements.compressPanel.hidden = state.mode !== "compress";
   renderFileList();
   if (state.mode === "compress") renderCompressionList();
   else renderCurrentDocument();
+  if (state.mode === "merge") renderMergeList();
 }
 
 function fileStatus(document) {
   if (state.mode === "split") return `${document.splitItems.length} 个拆分项`;
+  if (state.mode === "merge") return `${document.pageCount} 页 · 可自定义`;
   if (state.mode === "image") return `已选 ${document.selected.size} / ${document.pageCount} 页`;
   return document.compression ? `${formatBytes(document.file.size)} → ${formatBytes(document.compression.size)}` : `源文件 ${formatBytes(document.file.size)}`;
 }
@@ -520,6 +524,88 @@ function validateSplitItem(document, item) {
   if (!pages.length) throw new Error("拆分项的页码不能为空。");
   const name = safeName(item.name, `${document.baseName}-拆分`).replace(/\.pdf$/i, "");
   return { pages, name: `${name}.pdf` };
+}
+
+function parseOrderedPageRange(value, pageCount) {
+  const input = String(value || "").replace(/，/g, ",").trim();
+  if (!input) return [];
+  const pages = [];
+  for (const rawPart of input.split(",")) {
+    const part = rawPart.trim();
+    if (!part) continue;
+    const match = part.match(/^(\d+)\s*(?:[-—~]\s*(\d+))?$/);
+    if (!match) throw new Error(`无法识别页码“${part}”，请使用 3, 1, 2 或 1-3。`);
+    const start = Number(match[1]);
+    const end = Number(match[2] || match[1]);
+    if (start < 1 || end < 1 || start > end || end > pageCount) throw new Error(`页码“${part}”超出范围，当前 PDF 共 ${pageCount} 页。`);
+    for (let page = start; page <= end; page += 1) pages.push(page);
+  }
+  return pages;
+}
+
+function renderMergeList() {
+  elements.mergeList.replaceChildren();
+  let totalPages = 0;
+  state.documents.forEach((pdfDocument, index) => {
+    const row = documentElement("div", "merge-item");
+    row.innerHTML = `<div class="merge-item-order">${String(index + 1).padStart(2, "0")}</div><div class="merge-item-copy"><strong></strong><small></small></div><label class="field"><span>保留页码 / 顺序</span><input class="merge-pages-input" type="text" inputmode="numeric" placeholder="例如：1-3, 6"></label><div class="merge-item-actions"><button class="item-button move-up" type="button" aria-label="上移文件">↑</button><button class="item-button move-down" type="button" aria-label="下移文件">↓</button></div>`;
+    row.querySelector("strong").textContent = pdfDocument.file.name;
+    row.querySelector("small").textContent = `${pdfDocument.pageCount} 页 · ${formatBytes(pdfDocument.file.size)}`;
+    const pagesInput = row.querySelector(".merge-pages-input");
+    pagesInput.value = pdfDocument.mergePages;
+    try { totalPages += parseOrderedPageRange(pdfDocument.mergePages, pdfDocument.pageCount).length; } catch { pagesInput.setAttribute("aria-invalid", "true"); }
+    pagesInput.addEventListener("input", (event) => { pdfDocument.mergePages = event.target.value; pagesInput.removeAttribute("aria-invalid"); renderMergeSummary(); });
+    pagesInput.addEventListener("blur", () => { try { parseOrderedPageRange(pdfDocument.mergePages, pdfDocument.pageCount); } catch (error) { pagesInput.setAttribute("aria-invalid", "true"); notify(error.message, true); } });
+    row.querySelector(".move-up").disabled = index === 0;
+    row.querySelector(".move-down").disabled = index === state.documents.length - 1;
+    row.querySelector(".move-up").addEventListener("click", () => moveMergeDocument(index, -1));
+    row.querySelector(".move-down").addEventListener("click", () => moveMergeDocument(index, 1));
+    elements.mergeList.appendChild(row);
+  });
+  elements.mergeEmpty.hidden = state.documents.length > 0;
+  elements.mergePdf.disabled = !state.documents.length;
+  elements.mergePageCount.textContent = `${totalPages} 页`;
+}
+
+function renderMergeSummary() {
+  const total = state.documents.reduce((sum, pdfDocument) => {
+    try { return sum + parseOrderedPageRange(pdfDocument.mergePages, pdfDocument.pageCount).length; } catch { return sum; }
+  }, 0);
+  elements.mergePageCount.textContent = `${total} 页`;
+}
+
+function moveMergeDocument(index, offset) {
+  const target = index + offset;
+  if (target < 0 || target >= state.documents.length) return;
+  [state.documents[index], state.documents[target]] = [state.documents[target], state.documents[index]];
+  state.currentIndex = Math.min(state.currentIndex, state.documents.length - 1);
+  renderWorkspace();
+}
+
+async function mergePdfs() {
+  if (state.busy || !state.documents.length) return;
+  const name = safeName(String(elements.mergeName.value || "").replace(/\.pdf$/i, ""), "合并后的 PDF");
+  try {
+    const targets = state.documents.map((pdfDocument) => ({ document: pdfDocument, pages: parseOrderedPageRange(pdfDocument.mergePages, pdfDocument.pageCount) }));
+    if (!targets.some((target) => target.pages.length)) { notify("请至少保留一页 PDF。", true); return; }
+    const totalPages = targets.reduce((sum, target) => sum + target.pages.length, 0);
+    setBusy(true, "正在合并 PDF", `准备合并 ${totalPages} 页`);
+    const output = await PDFLib.PDFDocument.create();
+    output.setTitle(name);
+    output.setCreator("ToolBox PDF 工具");
+    let completed = 0;
+    for (const target of targets) {
+      const source = await PDFLib.PDFDocument.load(target.document.bytes, { updateMetadata: false });
+      const copied = await output.copyPages(source, target.pages.map((page) => page - 1));
+      copied.forEach((page) => output.addPage(page));
+      completed += target.pages.length;
+      elements.loadingDetail.textContent = `已处理 ${completed} / ${totalPages} 页`;
+    }
+    const bytes = await output.save({ useObjectStreams: true });
+    downloadBlob(new Blob([bytes], { type: "application/pdf" }), `${name}.pdf`);
+    notify(`已生成 ${name}.pdf，共 ${completed} 页。`);
+  } catch (error) { console.error("PDF 合并失败", error); notify(operationError(error, "PDF 合并失败，请检查页码或原文件。"), true); }
+  finally { setBusy(false); }
 }
 
 function renderSplitList() {
@@ -782,6 +868,7 @@ elements.pageGrid.addEventListener("lostpointercapture", finishDragSelection);
 elements.addSplit.addEventListener("click", addSelectedSplit);
 elements.splitSingle.addEventListener("click", splitEveryPage);
 elements.downloadPdfs.addEventListener("click", downloadAllPdfs);
+elements.mergePdf.addEventListener("click", mergePdfs);
 elements.downloadImages.addEventListener("click", downloadImages);
 elements.compressPdf.addEventListener("click", compressAll);
 document.querySelectorAll('input[name="compress-preset"]').forEach((input) => input.addEventListener("change", () => {
