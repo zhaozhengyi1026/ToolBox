@@ -5,6 +5,7 @@
     ["首页 · 全部工具", "/", "home"],
     ["MD 转换成 PDF", "/md2pdf", "md"],
     ["拆分 PDF", "/pdf-tools/?mode=split", "pdf-split"],
+    ["合并 PDF", "/pdf-tools/?mode=merge", "pdf-merge"],
     ["PDF 转图片", "/pdf-tools/?mode=image", "pdf-image"],
     ["压缩 PDF", "/pdf-tools/?mode=compress", "pdf-compress"],
     ["图片转 PDF", "/image-tools/?mode=pdf", "image-pdf"],
@@ -22,9 +23,9 @@
     <a class="tool-nav-brand" href="/" aria-label="ToolBox 首页"><span class="tool-nav-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>ToolBox</span></a>
     <div class="tool-nav-home">${link(items[0])}</div>
     <div class="tool-nav-group"><span>文档</span>${link(items[1])}</div>
-    <div class="tool-nav-group"><span>PDF</span>${items.slice(2, 5).map(link).join("")}</div>
-    <div class="tool-nav-group"><span>图片</span>${items.slice(5, 7).map(link).join("")}</div>
-    <div class="tool-nav-group"><span>其他</span>${items.slice(7).map(link).join("")}</div>
+    <div class="tool-nav-group"><span>PDF</span>${items.slice(2, 6).map(link).join("")}</div>
+    <div class="tool-nav-group"><span>图片</span>${items.slice(6, 8).map(link).join("")}</div>
+    <div class="tool-nav-group"><span>其他</span>${items.slice(8).map(link).join("")}</div>
     <p class="tool-nav-footer">文件处理在本地浏览器中完成</p>`;
 
   const toggle = document.createElement("button");
